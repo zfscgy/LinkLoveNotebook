@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="node_modules/jquery/dist/jquery.js"></script>
+    <script src="node_modules/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="node_modules/vue/dist/vue.js"></script>
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="css/common.css">
+</head>
+
+<body>
+    <div id="account">
+        <div class="container">
+            <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+                <div class="navbar-brand">链恋笔记本</div>
+                <div class="collapse navbar-collapse">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active"><a class="nav-link">个人中心</a></li>
+                        <li class="nav-item"><a class="nav-link">发现</a></li>
+                    </ul>
+                </div>
+            </nav>
+            <div class="row">
+                <div class="zf-account-header">
+                    <h3 class="text-muted" style="float: left">我的笔记本</h3>
+                    <button type="button" class="btn btn-primary" style="float:right" data-toggle="modal"
+                        data-target="#new-notebook-modal">添加笔记本</button>
+                </div>
+            </div>
+            <div class="zf-card-container">
+                <div class="zf-card"
+                    v-for="notebook in notebooks.slice((current_page-1)*notebooks_perpage, current_page*notebooks_perpage)">
+                    <div class="row" style="vertical-align: bottom">
+                        <div class="col-3 text-dark" style="font-size: 19px">
+                            {{notebook.name}}
+                        </div>
+                        <div class="col-6 text-center text-info" style="font-size: 15px">
+                            {{notebook.desc}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="container">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-dark">我的好友列表</div>
+                        <div class="zf-notebook-friend-list">
+                            <figure class="zf-notebook-friend-pic" v-for="friend in friends">
+                                <img v-bind:src="friend.avatar">
+                                <figcaption>{{friend.name}}</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="new-notebook-modal" class="modal fade">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">创建新笔记本</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid gray">创建一个新的笔记本。注意笔记本的id、名称、描述将不可修改。</div>
+                        <div class="form-group">
+                            <div class="col-form-label">笔记本id</div>
+                            <input type="text" class="form-control" placeholder="要想笔记本更加私密，务必使用复杂的id哦">
+                        </div>
+                        <div class="form-group">
+                            <div class="col-form-label">笔记本名称</div>
+                            <input type="text" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <div class="col-form-label">笔记本描述</div>
+                            <textarea type="text" class="form-control"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary">确认</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/account.js"></script>
+
+</body>
+
+</html>
