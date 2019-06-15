@@ -179,3 +179,7 @@ function write_notebook_content(token, notebook_id, content) {
 function make_friend(token, user_id, action) {
     return { msg: "ok" }
 }
+
+/**
+ * 
+ */

@@ -34,7 +34,13 @@
         <div v-show="selected=='login-tab'" class="container w-75 zf-tab-body">
             <!--此处的div必须使用 align-items:center, 因为没有多行的情况下align-content无效，会变成stretch, 导致文字无法居中-->
             <div class="row zf-horizental-input-row">
-                <div class="col-2 zf-horizental-input-label">
+                <div class="zf-horizental-input-label">
+                    <div>用户名</div>
+                </div>
+                <input class="col-3 form-control">
+            </div>
+            <div class="row zf-horizental-input-row">
+                <div class="zf-horizental-input-label">
                     <div>私钥</div>
                 </div>
                 <input class="col-8 form-control">
@@ -48,15 +54,15 @@
         <div v-show="selected=='register-tab'" class="container w-75 zf-tab-body">
             <div class="row zf-horizental-input-row">
                 <div class="zf-horizental-input-label">
-                    <div>私钥</div>
-                </div>
-                <input class="col-8 form-control">
-            </div>
-            <div class="row zf-horizental-input-row">
-                <div class="zf-horizental-input-label">
                     <div>用户名</div>
                 </div>
                 <input class="col-3 form-control">
+            </div>
+            <div class="row zf-horizental-input-row">
+                <div class="zf-horizental-input-label">
+                    <div>私钥</div>
+                </div>
+                <input class="col-8 form-control">
             </div>
             <div class="row zf-horizental-input-row">
                 <div class="zf-horizental-input-label">
