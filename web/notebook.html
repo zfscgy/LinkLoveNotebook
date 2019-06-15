@@ -11,32 +11,65 @@
 </head>
 
 <body>
-    <div class="container" id="notebook">
-        <div class="row">
-            <div class="zf-notebook-header">
-                <h3 class="text-muted">{{name}}</h3>
-                <div class="zf-notebook-author-list">
-                    <figure class="zf-notebook-author-pic" v-for="author in authors">
-                        <img v-bind:src="author.avatar">
-                        <figcaption>{{author.name}}</figcaption>
-                    </figure>
-                </div>
-            </div>
-        </div>
-        <hr>
-        <div class="zf-content-container" v-for="content in contents">
-            <div class="row">
-                <img v-bind:src="content.author.avatar" class="zf-content-mark"></img>
-                <div class="text-muted zf-content-date">
-                    <span style="align-self: flex-end">{{content.date}}</span>
-                </div>
-            </div>
-            <div class="row">
-                <div class="zf-content-body">
-                    <div class="zf-content-body-text">
-                        {{content.text}}
+    <div id="notebook">
+        <div class="container">
+            <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+                <a class="navbar-brand" href="#">链恋笔记本</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-list">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbar-list">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active"><a class="nav-link" href="account.html">个人中心</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">发现</a></li>
+                    </ul>
+                    <div>
+                        <a href="notifications.html">
+                            <img v-bind:src="avatar" style="height: 2rem; width: 2rem; border-radius: 0.3rem">
+                        </a>
                     </div>
                 </div>
+            </nav>
+            <div class="row">
+                <div class="zf-notebook-header">
+                    <h3 class="text-muted">{{name}}</h3>
+                    <div class="zf-notebook-author-list">
+                        <figure class="zf-notebook-author-pic" v-for="author in authors">
+                            <img v-bind:src="author.avatar">
+                            <figcaption>{{author.name}}</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="zf-content-container" v-for="content in contents">
+                <div class="row">
+                    <img v-bind:src="content.author.avatar" class="zf-content-mark"></img>
+                    <div>
+                        <span class="zf-content-author">{{content.author.name}}</span>
+                        <span class="text-muted zf-content-date" style="align-self: flex-end">{{content.date}}</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="zf-content-body">
+                        <div class="zf-content-body-text">
+                            <div>{{content.text}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="zf-reply-box">
+                <div class="zf-reply-box-label">
+                    <div>
+                        新的笔记
+                    </div>
+                    <button class="btn btn-primary">
+                        发布笔记
+                    </button>
+                </div>
+                <textarea type="text" class="zf-reply-text form-control">
+                </textarea>
             </div>
         </div>
     </div>

@@ -15,12 +15,20 @@
     <div id="account">
         <div class="container">
             <nav class="navbar navbar-expand-md navbar-dark bg-dark">
-                <div class="navbar-brand">链恋笔记本</div>
-                <div class="collapse navbar-collapse">
+                <a class="navbar-brand" href="#">链恋笔记本</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-list">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbar-list">
                     <ul class="navbar-nav mr-auto">
-                        <li class="nav-item active"><a class="nav-link">个人中心</a></li>
-                        <li class="nav-item"><a class="nav-link">发现</a></li>
+                        <li class="nav-item active"><a class="nav-link" href="account.html">个人中心</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">发现</a></li>
                     </ul>
+                    <div>
+                        <a href="notifications.html">
+                            <img v-bind:src="avatar" style="height: 2rem; width: 2rem; border-radius: 0.3rem">
+                        </a>
+                    </div>
                 </div>
             </nav>
             <div class="row">
@@ -33,11 +41,11 @@
             <div class="zf-card-container">
                 <div class="zf-card"
                     v-for="notebook in notebooks.slice((current_page-1)*notebooks_perpage, current_page*notebooks_perpage)">
-                    <div class="row" style="vertical-align: bottom">
-                        <div class="col-3 text-dark" style="font-size: 19px">
+                    <div class="row" style="align-items: flex-end">
+                        <div class="text-dark zf-text-block" style="font-size: 19px">
                             {{notebook.name}}
                         </div>
-                        <div class="col-6 text-center text-info" style="font-size: 15px">
+                        <div class="text-center text-info zf-text-block" style="font-size: 15px">
                             {{notebook.desc}}
                         </div>
                     </div>
@@ -68,7 +76,8 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <div style="padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid gray">创建一个新的笔记本。注意笔记本的id、名称、描述将不可修改。</div>
+                        <div style="padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid gray">
+                            创建一个新的笔记本。注意笔记本的id、名称、描述将不可修改。</div>
                         <div class="form-group">
                             <div class="col-form-label">笔记本id</div>
                             <input type="text" class="form-control" placeholder="要想笔记本更加私密，务必使用复杂的id哦">
@@ -80,18 +89,17 @@
                         <div class="form-group">
                             <div class="col-form-label">笔记本描述</div>
                             <textarea type="text" class="form-control"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary">确认</button>
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
-                        <button type="button" class="btn btn-primary">确认</button>
-                    </div>
-
                 </div>
             </div>
         </div>
     </div>
     <script src="scripts/account.js"></script>
-
 </body>
 
 </html>

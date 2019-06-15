@@ -21,7 +21,10 @@ let msgs = {
     // get_notebook_contents
     "41": "start、end下标不合法",
     // make_friend
-    "51": "好友操作未定义"
+    "51": "好友操作未定义",
+    // create_notebook
+    "61": "该笔记本id已经被注册",
+    "62": "无法找到该写权限用户的id"
 }
 /**
  * 参数：
@@ -55,7 +58,7 @@ function register_account(priv_key, register_info) {
  * { user_id: 唯一用户名
  * name: 姓名
  * avatar: 头像路径
- * notebooks 拥有的笔记本: [{ notebook_id 笔记本唯一ID, name 笔记本名称, desc 笔记本描述,  writers: [] 笔记本写权限拥有者(id的数组，如果为空数组则是公开笔记本), public 笔记本是否在主页上公开},]
+ * notebooks 拥有的笔记本: [{ notebook_id 笔记本唯一ID, name 笔记本名称, creator 创建者, desc 笔记本描述,  writers: [] 笔记本写权限拥有者(id的数组，如果为空数组则是公开笔记本), public 笔记本是否在主页上公开},]
  * }
  */
 function get_my_account_info(token) {
@@ -65,29 +68,62 @@ function get_my_account_info(token) {
 /**
  * 参数：
  * user_id
+ * 返回
+ * account_info: {[ uid,id ], name, avatar} 
+ */
+function get_simple_account_info(user_id) {
+    return { data: simple_info, msg:"ok" }
+}
+
+/**
+ * 参数：
+ * user_id
  * 返回：
  * account_info
  * {
  *     name: 姓名
+ *     avatar: 头像
  *     notebooks: [ notebook: {notebook_id 笔记本唯一ID, name 笔记本名称, desc 笔记本描述} ]
  * }
  */
 
 function get_account_info(user_id) {
-    return { data: account_info, msh: "ok" }
+    return { data: account_info, msg: "ok" }
+}
+
+
+/**
+ * 参数：
+ * token
+ * notebook_id
+ * notebook_auth 笔记本权限: [ author: 写权限拥有者 ] 若列表为空，表示任何人具有写权限
+ * notebook_info 笔记本信息: { name: 笔记本名称, desc: 笔记本描述}
+ * 返回：
+ * notebook_info
+ */
+
+function create_notebook(token, notebook_id, notebook_auth, notebook_info) {
+    return { data: notebook_info, msg: "ok" }
 }
 
 /**
  * 参数：
- * notebook_id
+ * token
  * 返回：
- * notebook_info 笔记本信息：
- * { notebook_id 笔记本唯一ID, name 笔记本名称, desc 笔记本描述,  writers: [] 笔记本写权限拥有者(id的数组，如果为空数组则是公开笔记本), public 笔记本是否在主页上公开, length: 笔记本当前长度}
- * 
+ * unauthed_notebooks: 未认证的笔记本申请 [{ name: 笔记本名称, desc: 笔记本描述, creator: 笔记本创建人, create_time: 笔记本创建时间, authed_authors: 已经同意的 }]
+ *  
  */
-function get_my_notebook_info(token, notebook_id) {
-    return { data: notebook_info, msg: "ok" }
+function get_my_unauthed_notebook(token) {
+    return {data: unauthed_notebooks, msg: "ok" }
 }
+
+/** 
+ * 
+*/
+function auth_notebook(token, notebook_id) {
+    return { msg: "ok" } 
+}
+
 
 /**
  * 参数：
