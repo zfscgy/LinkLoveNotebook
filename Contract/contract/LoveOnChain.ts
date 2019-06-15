@@ -147,6 +147,7 @@ class LoveOnChain extends Contract {
     let existing = this.user_db.exists(NAME(u_id));
     ultrain_assert(!existing, "this user has existed in db yet.");
     this.user_db.emplace(new_user);
+    Return("ok");
   }
 
   // 用户登陆：根据用户名验证密码
@@ -156,10 +157,10 @@ class LoveOnChain extends Contract {
     this.user_db.get(NAME(u_id), u);
 
     if(u.passwd == passwd){
-      Return("Login success!");
+      Return("1");
     };
     if(u.passwd != passwd){
-      Return("Login fail!");
+      Return("0");
     };
   }
 
@@ -175,9 +176,10 @@ class LoveOnChain extends Contract {
     let relation = new R1u1nb();
     this.r1u1nb_db.get(NAME(u_id), relation);
 
-    ReturnArray<string>(["name:"+u.name, "sex:"+u.sex]);
-    ReturnArray<string>(["friends:"+friend.friends.toString()]);
-    ReturnArray<string>(["notebook ids:"+relation.nb_ids.toString(), "notebook names:"+relation.nb_names.toString(), "notebook desc:"+relation.nb_desc.toString(), "share:"+relation.share.toString()]);
+    ReturnArray<string>([u.name, u.sex]);
+    ReturnArray<string>([friend.friends.join('||')]);
+    // ReturnArray<string>(["notebook ids:"+relation.nb_ids.toString(), "notebook names:"+relation.nb_names.toString(), "notebook desc:"+relation.nb_desc.toString(), "share:"+relation.share.toString()]);
+    ReturnArray<string>([relation.nb_ids.join('||'), relation.nb_names.join('||'), relation.nb_desc.join('||'), relation.share.join('||')]);
     // return u + friend + relation;
   }
 
@@ -193,10 +195,10 @@ class LoveOnChain extends Contract {
 
     let relation = new R1u1nb();
     this.r1u1nb_db.get(NAME(u_id), relation);
-    ReturnArray<string>(["name:"+u.name, "sex:"+u.sex]);
-    ReturnArray<string>(["friends:"+friend.friends.toString()]);
-    ReturnArray<string>(["notebook ids:"+relation.nb_ids.toString(), "notebook names:"+relation.nb_names.toString(), "notebook desc:"+relation.nb_desc.toString(), "share:"+relation.share.toString()]);
-    
+    ReturnArray<string>([u.name, u.sex]);
+    ReturnArray<string>([friend.friends.join('||')]);
+    // ReturnArray<string>(["notebook ids:"+relation.nb_ids.toString(), "notebook names:"+relation.nb_names.toString(), "notebook desc:"+relation.nb_desc.toString(), "share:"+relation.share.toString()]);
+    ReturnArray<string>([relation.nb_ids.join('||'), relation.nb_names.join('||'), relation.nb_desc.join('||'), relation.share.join('||')]);
     // return u + friend + relation;
   }
 
@@ -252,7 +254,8 @@ class LoveOnChain extends Contract {
     let friend = new Friends();
     this.friends_db.get(NAME(u_id), friend);
     friend.prints();
-    ReturnArray<string>(["friends:"+friend.friends.toString()]);
+    // ReturnArray<string>(["friends:"+friend.friends.toString()]);
+    ReturnArray<string>([friend.friends.join('||')])
   }
 
   // 创建日记本
@@ -322,7 +325,8 @@ class LoveOnChain extends Contract {
     // 读取 Relation_u_d 表中指定 user 的记录
     let relation = new R1u1nb();
     this.r1u1nb_db.get(NAME(u_id), relation);
-    ReturnArray<string>(["notebook ids:"+relation.nb_ids.toString(), "notebook names:"+relation.nb_names.toString(), "notebook desc:"+relation.nb_desc.toString(), "share:"+relation.share.toString()]);
+    // ReturnArray<string>(["notebook ids:"+relation.nb_ids.toString(), "notebook names:"+relation.nb_names.toString(), "notebook desc:"+relation.nb_desc.toString(), "share:"+relation.share.toString()]);
+    ReturnArray<string>([relation.nb_ids.join('||'), relation.nb_names.join('||'), relation.nb_desc.join('||'), relation.share.join('||')]);
     
   }
 
@@ -332,78 +336,9 @@ class LoveOnChain extends Contract {
     // 读取 record 表中指定 id 的记录
     let record = new Record();
     this.record_db.get(NAME(nb_id), record);
-    ReturnArray<string>(["writers:"+record.writer.toString(), "date_time:"+record.date_time.toString(), "text:"+record.text.toString()]);
+    // ReturnArray<string>(["writers:"+record.writer.toString(), "date_time:"+record.date_time.toString(), "text:"+record.text.toString()]);
+    ReturnArray<string>([record.writer.join('||'), record.date_time.join('||'), record.text.join('||')]);
   }
-
-
-
-
-
-
-
-  // @action
-  // addDiary(id: u64, owner: string, date: string, partner: string, lover_name: string, details : string): void {
-  //   let p = new Diary();
-  //   p.id = id;
-  //   p.owner = owner;
-  //   p.date = date;
-  //   p.partner = partner;
-  //   p.lover_name = lover_name;
-  //   p.details = details;
-
-  //   // let existing = this.diarydb.exists(owner);
-  //   // ultrain_assert(!existing, "this person has existed in db yet.");
-  //   this.diarydb.emplace(p);
-  // }
-
-  
-
-  // @action
-  // remove(u_id: u64): void {
-  //   Log.s("start to remove: ").i(id).flush();
-  //   let existing = this.user_db.exists(id);
-  //   ultrain_assert(existing, "this id is not exist.");
-  //   this.user_db.erase(id);
-  // }
-
-  // @action
-  // enumrateUser(dbname: string): void {
-  //   //let cursor: Cursor<Person> = new Cursor<Person>();
-  //   let cursor: Cursor<User>;
-  //   cursor = this.userdb.cursor();
-  //   Log.s("cursor.count =").i(cursor.count).flush();
-
-  //   while(cursor.hasNext()) {
-  //     let p = cursor.get();
-  //     p.prints();
-  //     cursor.next();
-  //   }
-  // }
-
-  // enumrateDiary(owner: u64, lover: u64): void {
-  //   //let cursor: Cursor<Person> = new Cursor<Person>();
-  //   let cursor: Cursor<Diary>;
-  //   cursor = this.userdb.cursor();
-  //   Log.s("cursor.count =").i(cursor.count).flush();
-
-  //   while(cursor.hasNext()) {
-  //     let p = cursor.get();
-  //     p.prints();
-  //     cursor.next();
-  //   }
-  // }
-
-  // @action
-  // drop(dbname: string): void {
-  //   if (dbname == "user") {
-  //     this.userdb.dropAll();
-  //   } else if (dbname == "diary") {
-  //     this.diarydb.dropAll();
-  //   } else {
-  //     ultrain_assert(false, "unknown db name.");
-  //   }
-  // }
-
 
   @action
   pubkeyOf(account: account_name): void {
