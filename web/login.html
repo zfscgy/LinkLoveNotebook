@@ -6,6 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <script src="node_modules/jquery/dist/jquery.js"></script>
     <script src="node_modules/vue/dist/vue.js"></script>
+    <script src="node_modules/md5-js/md5.js"></script>
+    <script src="node_modules/axios/dist/axios.js"></script>
+    <script src="scripts/client.js"></script>
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
     <link rel="stylesheet" href="css/login.css">
     <style type="text/css">
@@ -16,7 +19,7 @@
 </head>
 
 <body>
-    <div id="login" class="container" style="margin-top:30px;margin-bottom:15px">
+    <div id="login" class="container" style="margin-top:30px;margin-bottom:15px;max-width: 600px;">
         <div class="row justify-content-around">
             <h1 class="text-center">
                 链恋笔记本
@@ -37,16 +40,16 @@
                 <div class="zf-horizental-input-label">
                     <div>用户名</div>
                 </div>
-                <input class="col-3 form-control">
+                <input class="col-8 form-control" v-model="input.id">
             </div>
             <div class="row zf-horizental-input-row">
                 <div class="zf-horizental-input-label">
                     <div>私钥</div>
                 </div>
-                <input class="col-8 form-control">
+                <input class="col-8 form-control" v-model="input.priv_key">
             </div>
             <div class="row zf-horizental-input-row">
-                <button class="btn btn-primary" style="padding-left: 20px; padding-right: 20px">
+                <button class="btn btn-primary" style="padding-left: 20px; padding-right: 20px" v-on:click="login()">
                     登录
                 </button>
             </div>
@@ -56,22 +59,22 @@
                 <div class="zf-horizental-input-label">
                     <div>用户名</div>
                 </div>
-                <input class="col-3 form-control">
+                <input class="col-8 form-control" v-model="input.id">
             </div>
             <div class="row zf-horizental-input-row">
                 <div class="zf-horizental-input-label">
                     <div>私钥</div>
                 </div>
-                <input class="col-8 form-control">
+                <input class="col-8 form-control" v-model="input.priv_key">
             </div>
             <div class="row zf-horizental-input-row">
                 <div class="zf-horizental-input-label">
                     <div>昵称</div>
                 </div>
-                <input class="col-3 form-control">
+                <input class="col-8 form-control" v-model="input.name">
             </div>
             <div class="row zf-horizental-input-row">
-                <button class="btn btn-primary" style="padding-left: 20px; padding-right: 20px">
+                <button class="btn btn-primary" style="padding-left: 20px; padding-right: 20px" v-on:click="register()">
                     注册
                 </button>
             </div>

@@ -1,21 +1,48 @@
 var notebook = new Vue({
     el: "#notebook",
     data: {
-        name: "My love diary",
-        authors: [{ name: "David", avatar: "res/imgs/img1.jpg" },
-        { name: "Cwk", avatar: "res/imgs/img2.jpg" }],
-        contents: [{
-            date: '2019-01-01 12:00:00',
-            author: { name: "David", avatar: "res/imgs/img1.jpg" },
-            text: "今天我开启了这个笔记本，哈哈哈",
-            pics: []
+        info:{
+            name:"",
+            author:{
+                name:"",
+                avatar:""
+            }
         },
-        {
-            date: '2019-06-01 12:00:00',
-            author: { name: "Cwk", avatar: "res/imgs/img2.jpg" },
-            text: "按照科大现在的体量，是没办法做到大而全的。\n科大几乎只有理科，工科也算不得强，但是理科在全国乃至世界都是得到认可的。这也是科大最大的特色。人才培养和科研成果几乎都集中在理科，少部分在工科，其他领域几乎为0。",
-            pics: []
-        }]
-    }
+        contents:[]
 
+    },
+    methods:{
+        get_notebook(){
+            let params  = window.location.search.substring(1).split('&')
+            let para_dict = new Array()
+            for(var i in params){
+                let p = params[i].split('=')
+                para_dict[p[0]] = p[1]
+            }
+            let id = para_dict["id"]
+            let that = this
+            let next = {
+                then(res) {
+                    if(res.msg != "ok") {
+                        alert(smsgs[res.msg])
+                    }
+                    else if(res.data.info.dbmsg != "ok"){
+                        alert(dbmsgs[res.data.info.dbmsg])
+                    }
+                    else
+                    {
+                        that.info = res.data.info.data
+                        that.contents = res.data.preview.data
+                        console.log(this.info, this.contents)
+                    }
+                },
+                catch(err) {
+                    console.log(err)
+                    alert(err)
+                }
+            }
+            client.get_notebook_info(id, next)
+        }
+    }
 })
+notebook.get_notebook()

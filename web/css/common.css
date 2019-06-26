@@ -1,3 +1,7 @@
+input[type=text]::-ms-clear {
+    display: none;
+}
+
 .zf-account-header {
     display: block;
     flex: 1 1 100%;
@@ -60,7 +64,8 @@
 
 .zf-notebook-header .zf-notebook-author-list {
     display: flex;
-    margin: 10px
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .zf-notebook-header .zf-notebook-author-list .zf-notebook-author-pic {
@@ -198,4 +203,14 @@
 .zf-sm-user-pic-list figcaption {
     font-size: 13px;
     color: darkblue
+}
+
+.zf-has-error {
+    border: 1px solid darkred
+}
+
+.zf-error-lable {
+    font-size: 12px;
+    color: red;
+    margin-bottom: 4px
 }

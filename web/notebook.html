@@ -6,6 +6,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <script src="node_modules/jquery/dist/jquery.js"></script>
     <script src="node_modules/vue/dist/vue.js"></script>
+    <script src="node_modules/axios/dist/axios.js"></script>
+    <script src="scripts/client.js"></script>
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
     <link rel="stylesheet" href="css/common.css">
 </head>
@@ -32,9 +34,10 @@
             </nav>
             <div class="row">
                 <div class="zf-notebook-header">
-                    <h3 class="text-muted">{{name}}</h3>
+                    <h3 class="text-muted">{{info.name}}</h3>
+                    <div style="font-size: 14px">{{info.desc}}</div>
                     <div class="zf-notebook-author-list">
-                        <figure class="zf-notebook-author-pic" v-for="author in authors">
+                        <figure class="zf-notebook-author-pic" v-for="author in info.writers">
                             <img v-bind:src="author.avatar">
                             <figcaption>{{author.name}}</figcaption>
                         </figure>
