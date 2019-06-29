@@ -35,7 +35,7 @@ let dbmsgs = {
     "63": "笔记本写权限人数超出限制",
     // auth_notebook
     "71": "无法找到对应的用户-笔记本记录",
-    // vote_contetn
+    // vote_content
     "81": "无法找到该id对应的笔记本内容",
     // string length check failed
     "s0": "查询格式错误",
@@ -268,7 +268,20 @@ let client =
      * 返回：
      * contents 内容列表: [{ notebook_id 笔记本唯一ID, author_id 作者用户名, time 发表时间, text 内容, pic_list 图片列表 }]
      */
-    get_notebook_contents(notebook_id, start, end) {
+    get_notebook_contents(nid, start, end, next) {
+        axios.get(server + "/api/content", {
+            params: {
+                nid: this.info.id[1],
+                start: start,
+                end: end
+            }
+        })
+            .then(res => {
+                next.then(res.data)
+            })
+            .catch(err => {
+                next.catch(err)
+            })
         return { data: contents, msg: "ok" }
     },
 
@@ -291,12 +304,13 @@ let client =
      * ref 引用楼层（默认为0楼）
      */
     write_notebook_content(notebook_id, content, imgs, ref, next) {
-        axios.post(server + "/write/", {
+        axios.post(server + "/api/write/", {
             nid: notebook_id,
             content: content,
             imgs: imgs,
             ref: ref
-        }, {
+            }, 
+            {
                 headers: {
                     "content-type": "application/json"
                 }

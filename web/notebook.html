@@ -50,13 +50,13 @@
                     <img v-bind:src="content.author.avatar" class="zf-content-mark"></img>
                     <div>
                         <span class="zf-content-author">{{content.author.name}}</span>
-                        <span class="text-muted zf-content-date" style="align-self: flex-end">{{content.date}}</span>
+                        <span class="text-muted zf-content-date" style="align-self: flex-end">{{content.time}}</span>
                     </div>
                 </div>
                 <div class="row">
                     <div class="zf-content-body">
                         <div class="zf-content-body-text">
-                            <div>{{content.text}}</div>
+                            <div>{{content.content}}</div>
                         </div>
                     </div>
                 </div>
@@ -67,11 +67,11 @@
                     <div>
                         新的笔记
                     </div>
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" v-on:click="write_new_content()">
                         发布笔记
                     </button>
                 </div>
-                <textarea type="text" class="zf-reply-text form-control">
+                <textarea type="text" class="zf-reply-text form-control" v-model="input.new_content">
                 </textarea>
             </div>
         </div>
