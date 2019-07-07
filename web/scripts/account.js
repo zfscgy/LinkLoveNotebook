@@ -4,9 +4,9 @@ var account = new Vue({
         account_info: {
             name: "未登录",
             avatar: "res/imgs/img1.jpg",
-            friends: [],
             notebooks: []
         },
+        friends: [],
         input: {
             new_notebook_modal:
             {
@@ -56,8 +56,9 @@ var account = new Vue({
                 then(res) {
                     if (res.msg == "ok") {
                         if (res.data.dbmsg == "ok") {
-                            console.log(res)
-                            this.account_info.friends = res.data.data
+                            console.log("Get friend list:", res)
+                            that.friends = res.data.data
+                            console.log(that.account_info)
                         }
                         else {
                             alert(dbmsgs[res.data.dbmsg])
@@ -66,8 +67,13 @@ var account = new Vue({
                     else {
                         alert(smsgs[res.msg])
                     }
+                },
+                catch(err) {
+                    console.log(err)
+                    alert(err)
                 }
             }
+            client.get_friends(next)
         },
         create_notebook() {
             if (!check_syntax("notebook_name", this.input.new_notebook_modal.name) ||

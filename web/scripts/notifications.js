@@ -66,6 +66,7 @@ let notfis = new Vue({
                                     alert(err)
                                 }
                             })
+                            alert('添加好友成功！')
                         }
                         else {
                             alert(dbmsgs[res.data.dbmsg])

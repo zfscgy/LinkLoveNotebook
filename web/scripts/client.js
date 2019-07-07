@@ -300,7 +300,6 @@ let client =
         axios.get(server + "/api/myFriends/")
             .then(res => { next.then(res.data) })
             .catch(err => { next.catch(err) })
-        return { data: friends, msg: "ok" }
     },
 
     get_friend_requests(next) {
