@@ -58,6 +58,7 @@ class Friends(base):
     # 3 表示 用户2拒绝了用户1的好友申请
     # 4 表示 用户1拒绝了用户2的好友申请
     status = Column(Integer)
+    status_time = Column(DateTime)
 
 
 Index("ix_f_id1", Friends.uid1)
@@ -267,13 +268,18 @@ def auth_notebook(uid, nid):
 
 
 # 根据 uid 获得简单的账户信息
-def get_simple_account_info(uid:int):
+def get_simple_account_info(account_id):
     session = Session()
-    user = session.query(User).filter_by(uid=uid).one_or_none()
+    if type(account_id) is int:
+        user = session.query(User).filter_by(uid=account_id).one_or_none()
+    elif type(account_id) is str:
+        user = session.query(User).filter_by(rid=account_id).one_or_none()
+    else:
+        return dbmsg("s0")
     if not user:
         return dbmsg("21")
     res = {
-        "rid": [uid, user.rid],
+        "id": [user.uid, user.rid],
         "name": user.name,
         "avatar": user.avatar
     }
@@ -321,12 +327,12 @@ def get_my_account_info(uid:int):
 '''
     rid 可以是 int 也可以是 str 
 '''
-def get_account_info(rid):
+def get_account_info(account_id):
     session = Session()
-    if type(rid) == str:
-        user = session.query(User).filter_by(rid=rid).one_or_none()
-    elif type(rid) == int:
-        user = session.query(User).filter_by(uid=rid).one_or_none()
+    if type(account_id) == str:
+        user = session.query(User).filter_by(rid=account_id).one_or_none()
+    elif type(account_id) == int:
+        user = session.query(User).filter_by(uid=account_id).one_or_none()
     else:
         return dbmsg("s0")
     if not user:
@@ -512,7 +518,7 @@ def write_notebook_content(uid:int, nid:int, content:str, imgs:str="", ref:int=0
 # 2 表示 uid1 同意 uid2 好友申请
 # 3 表示 uid1 拒绝 uid2 好友申请
 # 4 表示 uid1 删除与 uid2 的好友关系
-def make_friend(uid1:int, uid2:int, mode:int):
+def make_friend(uid1:int, uid2:int, act:int):
     if uid1 == uid2:
         return dbmsg("52")
     session = Session()
@@ -523,11 +529,11 @@ def make_friend(uid1:int, uid2:int, mode:int):
     order = uid1 < uid2
     if order:
         friends = session.query(Friends). \
-            filter_by(uid1=uid1, uid2=uid2)
+            filter_by(uid1=uid1, uid2=uid2).one_or_none()
     else:
         friends = session.query(Friends). \
-            filter_by(uid1=uid2, uid2=uid1)
-    if mode == 1:
+            filter_by(uid1=uid2, uid2=uid1).one_or_none()
+    if act == 1:  # uid1 向 uid2 发出申请
         if order:
             # uid1 已经向 uid2 发出了好友申请
             if friends and friends.status == 1:
@@ -552,10 +558,10 @@ def make_friend(uid1:int, uid2:int, mode:int):
                 return dbmsg("56")
             new_friends = Friends(uid1=uid2, uid2=uid1, status=2)
             session.add(new_friends)
-        session.add(friends)
+        session.add(new_friends)
 
     # uid1 同意 uid2 的申请
-    elif mode == 2:
+    elif act == 2:
         if not friends:
             return dbmsg("53")
         if order:
@@ -568,7 +574,7 @@ def make_friend(uid1:int, uid2:int, mode:int):
             friends.status = 0
 
     # uid1 拒绝 uid2 的申请
-    elif mode == 2:
+    elif act == 2:
         if not friends:
             return dbmsg("53")
         if order:
@@ -579,14 +585,14 @@ def make_friend(uid1:int, uid2:int, mode:int):
             if friends.status != 1:
                 return dbmsg("53")
             friends.status = 0
-    elif mode == 3:
+    elif act == 3:
         if not friends:
             return dbmsg("57")
         session.delete(friends)
     else:
         return dbmsg("s0")
-
     session.commit()
+    return dbmsg()
 
 
 def get_friend_list(uid:int):
@@ -603,13 +609,13 @@ def get_friend_list(uid:int):
 
         if friend_info:
             friend_list.append({
-                "rid": [friend_info.uid, friend_info.rid],
+                "id": [friend_info.uid, friend_info.rid],
                 "name": friend_info.name,
                 "avatar": friend_info.avatar
             })
         else:
             friend_list.append({
-                "rid": [-1, "null"],
+                "id": [-1, "null"],
                 "name": "[已删除]",
                 "avatar": "lost.png"
             })
@@ -630,13 +636,13 @@ def get_my_friend_requests(uid:int):
 
         if friend_info:
             friend_list.append({
-                "rid": [friend_info.uid, friend_info.rid],
+                "id": [friend_info.uid, friend_info.rid],
                 "name": friend_info.name,
                 "avatar": friend_info.avatar
             })
         else:
             friend_list.append({
-                "rid": [-1, "null"],
+                "id": [-1, "null"],
                 "name": "[已删除]",
                 "avatar": "lost.png"
             })

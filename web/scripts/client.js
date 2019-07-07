@@ -251,7 +251,7 @@ let client =
      *  }]
      */
     get_notebook_info(notebook_id, next) {
-        axios.get(server + "/web/notebook", {
+        axios.get(server + "/api/notebook", {
             params: {
                 id: notebook_id
             }
@@ -271,7 +271,7 @@ let client =
     get_notebook_contents(nid, start, end, next) {
         axios.get(server + "/api/content", {
             params: {
-                nid: this.info.id[1],
+                nid: nid,
                 start: start,
                 end: end
             }
@@ -282,18 +282,31 @@ let client =
             .catch(err => {
                 next.catch(err)
             })
-        return { data: contents, msg: "ok" }
     },
 
 
     /**
      * 参数：
-     * token:
+     * 无
      * 返回：
-     * friends: [ user_id: 好友的id ]
+     * friends: 
+     * [{   
+     *      id: [uid, rid],
+     *      name:
+     *      avatar: 
+     * }]
      */
-    get_friends(token) {
+    get_friends(next) {
+        axios.get(server + "/api/myFriends/")
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
         return { data: friends, msg: "ok" }
+    },
+
+    get_friend_requests(next) {
+        axios.get(server + "/api/friendRequests/")
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
     },
 
     /**
@@ -309,7 +322,7 @@ let client =
             content: content,
             imgs: imgs,
             ref: ref
-            }, 
+        },
             {
                 headers: {
                     "content-type": "application/json"
@@ -322,10 +335,22 @@ let client =
     /**
      * 参数：
      * token
-     * user_id
-     * action: "add" 添加, "del" 删除 
+     * user_id: 可以是 rid(string), 或者是 uid(int)
+     * action: 1 添加, 2 同意 3 拒绝 4 删除
      */
-    make_friend(token, user_id, action) {
+    make_friend(user_id, action, next) {
+        axios.get(
+            server + "/api/befriend",
+            {
+                params: {
+                    u2: user_id,
+                    act: action
+                }
+            })
+            .then(res => {
+                next.then(res.data)
+            })
+            .catch(err => { next.catch(err) })
         return { msg: "ok" }
     },
 

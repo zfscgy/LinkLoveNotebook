@@ -4,7 +4,6 @@ from Configs import *
 import json
 import Database as d
 import Token as t
-import traceback
 
 def record_exception(e:Exception):
     print("Exception: " + str(e) + "\n==========")
@@ -14,7 +13,15 @@ def record_exception(e:Exception):
 def smsg(msg:str="ok", data:dict=None):
     return {"msg":msg, "data": data}
 
+import traceback
 
+
+"""
+    返回值被包装在 smsg中，其中
+    smsg["msg"]表示服务器信息，如果smsg["msg"]=='ok'
+    则可以访问smsg["data"]得到内容数据
+    （一般是数据库信息dbmsg）
+"""
 app = Flask(__name__, static_folder=html_path, static_url_path='/web')
 
 @app.route('/hello/')
@@ -28,7 +35,7 @@ def login():
         rid, key_md5 = request.json.get("id"), request.json.get("key_md5")
         res = d.login(rid, key_md5)
         if res["dbmsg"] != "ok":
-            return make_response(json.dumps(smsg(data=res)))
+            return make_response(  json.dumps(smsg(data=res)))
         else:
             res["data"] = t.generate_token(res["data"])
         resp = make_response(json.dumps(smsg(data=res)))
@@ -48,20 +55,20 @@ def register():
         avatar = request.json.get("avatar")
         desc = request.json.get("desc")
         res = d.user_register(rid, key_md5, name, avatar, desc)
-        if res != "ok":
+        if res['dbmsg'] != "ok":
             return json.dumps(smsg(data=res))
+
+        res = d.login(rid, key_md5)
+        if res["dbmsg"] != "ok":
+            return make_response(json.dumps(serverMsg(data=res)))
         else:
-            res = d.login(rid, key_md5)
-            if res["dbmsg"] != "ok":
-                return make_response(json.dumps(serverMsg(data=res)))
-            else:
-                res["data"] = t.generate_token(res["data"])
-            resp = make_response(json.dumps(smsg(data=res)))
-            resp.set_cookie("token", res["data"])
-            return resp
+            res["data"] = t.generate_token(res["data"])
+        resp = make_response(json.dumps(smsg(data=res)))
+        resp.set_cookie("token", res["data"])
+        return resp
     except Exception as e:
-            record_exception(e)
-            return json.dumps(smsg("00"))
+        record_exception(e)
+        return json.dumps(smsg("00"))
 
 
 @app.route('/api/account', methods=["GET"])
@@ -83,7 +90,7 @@ def get_acount_info():
     return json.dumps(smsg(data=account_info))
 
 
-@app.route('/api/myAccount/')
+@app.route('/api/myAccount/', methods=["GET"])
 def get_my_account_info():
     token = request.cookies.get("token")
     # Cookie中没有Token
@@ -100,6 +107,30 @@ def get_my_account_info():
     uid = info["uid"]
     account_info = d.get_my_account_info(uid)
     return json.dumps(smsg(data=account_info))
+
+
+@app.route('/api/myFriends/', methods=["GET"])
+def get_my_friends():
+    """
+    获取当前账户的好友列表
+
+    :return: 当前账户的好友列表
+    """
+    token = request.cookies.get("token")
+    # Cookie中没有Token
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    uid = info["uid"]
+    friend_list = d.get_friend_list(uid)
+    return json.dumps(smsg(data=friend_list))
 
 
 @app.route('/api/createNotebook/', methods=["POST"])
@@ -127,8 +158,14 @@ def create_notebook():
     return json.dumps(smsg(data=res))
 
 
-@app.route('/web/notebook')
+@app.route('/api/notebook', methods=["GET"])
 def notebook():
+    """
+    获取笔记本信息，GET参数为
+    id: 笔记本的rid
+
+    :return: 笔记本基本信息
+    """
     rid = request.args.get("id")
     if rid is None:
         return json.dumps(smsg("01"))
@@ -146,7 +183,8 @@ def notebook():
     return json.dumps(smsg(data={"info": notebook_info,
                                  "preview": notebook_contents}))
 
-@app.route('/web/content')
+
+@app.route('/api/content', methods=["GET"])
 def content():
     nid = request.args.get("nid")
     start = request.args.get("start", type=int)
@@ -184,6 +222,62 @@ def write_content():
     imgs = request.json.get("imgs")
     ref = request.json.get("ref")
     res = d.write_notebook_content(uid, nid, content, imgs, ref)
+    return json.dumps(smsg(data=res))
+
+
+@app.route("/api/befriend", methods=["GET"])
+def friend():
+    """
+    对好友（或好友请求）进行操作
+    GET参数：
+    u2: 被操作的用户
+    act: 1 发起申请 2 同意 3 拒绝 4 删除
+    :return: 操作信息，ok表示操作成功
+    """
+    token = request.cookies.get("token")
+    # Cookie中没有Token
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    uid = info["uid"]
+    uid2 = request.args.get('u2', type=str)
+    res = d.get_simple_account_info(uid2)
+    if res['dbmsg'] != 'ok':
+        return json.dumps(smsg(data=res))
+    uid2 = res['data']['id'][0]
+    act = request.args.get('act', type=int)
+    res = d.make_friend(uid, uid2, act)
+    return json.dumps(smsg(data=res))
+
+
+@app.route("/api/friendRequests/", methods=["GET"])
+def friend_requests():
+    """
+    GET方法获取用户的好友请求
+
+    :return: 好友请求列表
+    """
+    token = request.cookies.get("token")
+    # Cookie中没有Token
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    uid = info['uid']
+    res = d.get_my_friend_requests(uid)
     return json.dumps(smsg(data=res))
 
 

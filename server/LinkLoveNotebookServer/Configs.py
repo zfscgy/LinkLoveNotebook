@@ -1,6 +1,6 @@
 encoding = 'utf-8'
 
-html_path = "D:\\MyDoc/Codes/html/BlockChain Notebook/web"
+html_path = "../../web"
 msgs = {
     # login
     "00": "用户名和私钥不匹配",

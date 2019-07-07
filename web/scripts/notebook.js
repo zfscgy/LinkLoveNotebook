@@ -37,7 +37,6 @@ var notebook = new Vue({
                     else {
                         that.info = res.data.info.data
                         that.contents = res.data.preview.data
-                        console.log(this.info, this.contents)
                     }
                 },
                 catch(err) {
@@ -48,6 +47,7 @@ var notebook = new Vue({
             client.get_notebook_info(id, next)
         },
         refresh_content() {
+            console.log(this.info)
             let nid = this.info.id[0]
             let that = this
             this.contents = client.get_notebook_contents(nid, this.content_start, this.content_end, 
@@ -60,7 +60,7 @@ var notebook = new Vue({
                             alert(dbmsgs[res.data.dbmsg])
                         }
                         else {
-                            that.contents = res
+                            that.contents = res.data.data
                         }
                     },
                     catch(err){
