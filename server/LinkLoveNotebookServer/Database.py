@@ -74,7 +74,7 @@ class Notebook(base):
     # 笔记本名称（最大长度32）
     name = Column(String(32))
     # 笔记本创建者
-    creator = Column(Integer , ForeignKey(User.uid))
+    creator = Column(Integer, ForeignKey(User.uid))
     # 笔记本创建时间
     create_time = Column(DateTime)
     # 笔记本描述（最大128字符）
@@ -185,7 +185,8 @@ def user_register(rid: str, key_md5:str, name:str, avatar:str, desc:str):
     return dbmsg()
 
 
-def create_notebook(rid:str, name:str, creator_id:int, desc:str, write_list:list):
+def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:list,
+                    public:int):
     # 检查 rid、名称、描述的长度
     if len(rid) > 16 or \
        len(name) > 32 or \
@@ -194,7 +195,7 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, write_list:list
 
 
     # 写权限拥有人数过多
-    if len(write_list) > 9:
+    if len(writer_list) > 9:
         return dbmsg("63")
 
     # 存在同样的笔记本
@@ -203,24 +204,27 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, write_list:list
         return dbmsg("61")
 
     # 如果写权限列表为空，则默认是公开笔记本
-    if len(write_list) == 0:
+    if len(writer_list) == 0:
         mode = 2
     # 写权限列表长度为1，则为仅作者可写
-    elif len(write_list) == 1:
+    elif len(writer_list) == 1:
         mode = 0
     # 否则是多人可写
     else:
         mode = 4
 
-    # 写权限列表的第一个人必须是创建者
-    if len(write_list) > 0 and write_list[0] != creator_id:
-        return dbmsg("s2")
+
 
     # 检查写权限用户是否存在
-    for uid in write_list:
-        if not session.query(User).filter(User.uid == uid).one_or_none():
-            return dbmsg("21")
-
+    writer_uid_list = []
+    for rid in writer_list:
+        writer = session.query(User).filter(User.rid == rid).one_or_none()
+        if not writer:
+            return dbmsg("21", data=rid)
+        writer_uid_list.append(writer.uid)
+    # 写权限列表的第一个人必须是创建者
+    if len(writer_uid_list) > 0 and writer_uid_list[0] != creator_id:
+        return dbmsg("s2")
     notebook = Notebook(
         rid=rid,
         name=name,
@@ -237,9 +241,9 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, write_list:list
         uid=creator_id,
         nid=notebook.nid,
         write_auth=1,
-        show_mode=1
+        show_mode=public
     ))
-    for uid in write_list[1:]:
+    for uid in writer_uid_list[1:]:
         session.add(UserNotebookMode(
             uid=uid,
             nid=notebook.nid,
@@ -250,7 +254,13 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, write_list:list
     return dbmsg("ok")
 
 
-def auth_notebook(uid, nid):
+def auth_notebook(uid:int, nid:int, act:int):
+    """
+    :param uid:
+    :param nid:
+    :param act: 1 接受 2 拒绝
+    :return:
+    """
     session = Session()
     user = session.query(User).filter_by(uid=uid).one_or_none()
     if not user:
@@ -262,7 +272,13 @@ def auth_notebook(uid, nid):
         filter_by(nid=nid, uid=uid).one_or_none()
     if not user_notebook_mode:
         return dbmsg("71")
-    user_notebook_mode.write_auth = 1
+    if user_notebook_mode.write_auth == 1:
+        return dbmsg("72")
+    elif user_notebook_mode.write_auth == 2:
+        return dbmsg("74")
+    elif user_notebook_mode.write_auth == 3:
+        return dbmsg("73")
+    user_notebook_mode.write_auth = act
     session.commit()
     return dbmsg("ok")
 
@@ -292,20 +308,43 @@ def get_my_account_info(uid:int):
     user = session.query(User).filter_by(uid=uid).one_or_none()
     if not user:
         return dbmsg("21")
-    notebooks = session.query(UserNotebookMode).\
-        filter(uid==uid, or_(UserNotebookMode.write_auth==1,
-                             UserNotebookMode.show_mode==1))
-    notebooks_json = []
-    for notebook_mode in notebooks:
+    public_notebooks = session.query(UserNotebookMode).\
+        filter(UserNotebookMode.uid==uid, or_(UserNotebookMode.write_auth==2)).\
+        all()
+    private_notebooks = session.query(UserNotebookMode). \
+        filter(UserNotebookMode.uid == uid, or_(UserNotebookMode.write_auth==1)).\
+        all()
+    public_notebooks_json = []
+    for notebook_mode in public_notebooks:
         notebook = notebook_mode.notebook
         writers = session.query(UserNotebookMode).\
             filter_by(nid=notebook.nid).all()
-        writer_arr = [[{"user_id": [writer.uid, writer.user.rid],
+        writer_arr = [[{"id": [writer.uid, writer.user.rid],
                         "user_auth": writer.write_auth,
                         "name": writer.user.name,
                         "avatar": writer.user.avatar}]
                       for writer in writers]
-        notebooks_json.append({
+        public_notebooks_json.append({
+            "id": [notebook.nid, notebook.rid],
+            "name": notebook.name,
+            "creator": notebook.creator,
+            "desc": notebook.desc,
+            "writers": writer_arr,
+            "mode": notebook.mode,
+            "public": notebook_mode.show_mode,
+            "length": notebook.content_length
+        })
+    private_notebooks_json = []
+    for notebook_mode in private_notebooks:
+        notebook = notebook_mode.notebook
+        writers = session.query(UserNotebookMode).\
+            filter_by(nid=notebook.nid).all()
+        writer_arr = [[{"id": [writer.uid, writer.user.rid],
+                        "user_auth": writer.write_auth,
+                        "name": writer.user.name,
+                        "avatar": writer.user.avatar}]
+                      for writer in writers]
+        private_notebooks_json.append({
             "id": [notebook.nid, notebook.rid],
             "name": notebook.name,
             "creator": notebook.creator,
@@ -316,10 +355,11 @@ def get_my_account_info(uid:int):
             "length": notebook.content_length
         })
     res = {
-        "user_id": [uid, user.rid],
+        "id": [uid, user.rid],
         "name": user.name,
         "avatar": user.avatar,
-        "notebooks": notebooks_json
+        "public_notebooks": public_notebooks_json,
+        "private_notebooks": private_notebooks_json
     }
     return dbmsg(data=res)
 
@@ -376,18 +416,22 @@ def get_my_unauthed_notebooks(uid:int):
         notebook = notebook_mode.notebook
         writers = session.query(UserNotebookMode).\
             filter_by(nid=notebook.nid).all()
-        writer_arr = [{"user_id": [writer.uid,writer.user.rid],
+        writer_arr = [{"id": [writer.uid,writer.user.rid],
                         "write_auth": writer.write_auth,
-                        "name": writers.user.name,
-                        "avatar": writers.user.avatar}
+                        "name": writer.user.name,
+                        "avatar": writer.user.avatar}
                       for writer in writers]
         authed_writers = [writer for writer in writer_arr if writer["write_auth"] == 1]
         unauthed_writers = [writer for writer in writer_arr if writer["write_auth"] == 0]
-        rejected_writers = [writer for writer in writer_arr if writer["write_auth"] == 0]
+        rejected_writers = [writer for writer in writer_arr if writer["write_auth"] == 3]
         notebooks_json.append({
-            "notebook_id": [notebook.nid, notebook.rid],
+            "id": [notebook.nid, notebook.rid],
             "name": notebook.name,
-            "creator": notebook.creator,
+            "creator": {
+                "id": [notebook.author.uid, notebook.author.rid],
+                "name": notebook.author.name,
+                "avatar": notebook.author.avatar
+            },
             "authed_writers": authed_writers,
             "unauthed_writers": unauthed_writers,
             "rejected_writers": rejected_writers,

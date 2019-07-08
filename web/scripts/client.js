@@ -15,6 +15,8 @@ let dbmsgs = {
     // register_account
     "11": "该id已经被注册",
     // get_account_info
+
+    // 对应的data：该id
     "21": "无法找到该id对应的用户",
     // get_my_notebook_info
     "31": "无法找到该id对应的笔记本",
@@ -33,9 +35,15 @@ let dbmsgs = {
     "61": "该笔记本id已经被注册",
     "62": "无法找到该写权限用户的id",
     "63": "笔记本写权限人数超出限制",
+    // write_notebook_content
+    "91": "不具有对该笔记本的写权限",
+    "92": "引用的楼层不存在",
     // auth_notebook
     "71": "无法找到对应的用户-笔记本记录",
-    // vote_content
+    "72": "你已经接受写权限",
+    "73": "你已经拒绝写权限",
+    "74": "该笔记本是公开笔记本，操作无效",
+    // vote_contetn
     "81": "无法找到该id对应的笔记本内容",
     // string length check failed
     "s0": "查询格式错误",
@@ -183,13 +191,14 @@ let client =
      * notebook_info
      */
 
-    create_notebook(token, id, notebook_auth, name, desc, next) {
+    create_notebook(id, writers, name, desc, public, next) {
         axios.post(server + "/api/createNotebook/",
             {
                 "id": id,
                 "name": name,
                 "desc": desc,
-                "write_list": []
+                "writers_list": writers,
+                "public": public
             },
             {
                 "headers": {
@@ -303,7 +312,7 @@ let client =
     },
 
     get_friend_requests(next) {
-        axios.get(server + "/api/friendRequests/")
+        axios.get(server + "/api/friendRequests")
             .then(res => { next.then(res.data) })
             .catch(err => { next.catch(err) })
     },
@@ -356,4 +365,24 @@ let client =
     /**
      * 
      */
+    get_unauthed_notebooks(next) {
+        axios.get(server + "/api/notebookRequests")
+            .then(res => { console.log(res);next.then(res.data) })
+            .catch(err => { next.catch(err) })
+    },
+    /**,
+     * 参数
+     * nid: 对应的笔记本nid
+     * act: 1 接受 2 拒绝
+     */
+    auth_notebook(nid, act, next) {
+        axios.get(server + "/api/notebookAuth",
+            {
+                params: {
+                    act: act
+                }
+            })
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
+    }
 }

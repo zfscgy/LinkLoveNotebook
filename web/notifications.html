@@ -117,7 +117,7 @@
                                 待确认:
                             </div>
                             <div class="zf-sm-user-pic-list">
-                                <figure v-for="user in proposal.unauthed">
+                                <figure v-for="user in proposal.unauthed_writers">
                                     <img v-bind:src="user.avatar">
                                     <figcaption class="text-center">{{user.name}}</figcaption>
                                 </figure>
@@ -126,7 +126,7 @@
                                 已同意:
                             </div>
                             <div class="zf-sm-user-pic-list">
-                                <figure v-for="user in proposal.authed">
+                                <figure v-for="user in proposal.authed_writers">
                                     <img v-bind:src="user.avatar">
                                     <figcaption class="text-center">{{user.name}}</figcaption>
                                 </figure>
@@ -135,7 +135,7 @@
                                 已放弃:
                             </div>
                             <div class="zf-sm-user-pic-list">
-                                <figure v-for="user in proposal.rejected">
+                                <figure v-for="user in proposal.rejected_writers">
                                     <img v-bind:src="user.avatar">
                                     <figcaption class="text-center">{{user.name}}</figcaption>
                                 </figure>

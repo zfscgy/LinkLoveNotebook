@@ -82,7 +82,28 @@ let notfis = new Vue({
                 }
             }
             client.make_friend(uid, act, next)
+        },
+        get_unauthed_notebooks: function() {
+            let that = this
+            let next = {
+                then(res) {
+                    if (res.msg == "ok") {
+                        if (res.data.dbmsg == "ok") {
+                            that.unauthed_proposals = res.data.data
+                        }
+                        else {
+                            alert(dbmsgs[res.data.dbmsg])
+                        }
+                    }
+                },
+                catch(err) {
+                    console.log(err)
+                    alert(err)
+                }
+            }
+            client.get_unauthed_notebooks(next)
         }
     }
 })
 notfis.get_friend_requests()
+notfis.get_unauthed_notebooks()

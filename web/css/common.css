@@ -23,6 +23,22 @@ input[type=text]::-ms-clear {
     border-radius: 10px
 }
 
+.zf-sm-user-container {
+    display: flex;
+    margin: 10px;
+    align-items: center;
+    align-content: center
+}
+
+.zf-sm-user-container .zf-user-tag {
+    text-align: center;
+    padding: 5px;
+    border: 1px solid grey;
+    border-radius: 5px;
+    background-color: lightgray;
+    cursor: pointer
+}
+
 .zf-text-block {
     padding-left: 10px;
     padding-right: 10px
@@ -36,9 +52,7 @@ input[type=text]::-ms-clear {
 .zf-notebook-friend-list .zf-notebook-friend-pic {
     display: flex;
     flex-flow: column;
-    width: 60px;
-    height: 70px;
-    margin: 10px;
+    margin: 10px
 }
 
 .zf-notebook-friend-list .zf-notebook-friend-pic img {
@@ -71,8 +85,6 @@ input[type=text]::-ms-clear {
 .zf-notebook-header .zf-notebook-author-list .zf-notebook-author-pic {
     display: flex;
     flex-flow: column;
-    width: 60px;
-    height: 70px;
     margin: 10px;
 }
 

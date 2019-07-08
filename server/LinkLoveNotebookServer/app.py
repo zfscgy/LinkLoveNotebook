@@ -151,10 +151,10 @@ def create_notebook():
     rid = request.json.get("id")
     name = request.json.get("name")
     desc = request.json.get("desc")
-    write_list = request.json.get("write_list")
-
+    write_list = request.json.get("writers_list")
+    public = request.json.get("public")
     # Should check some constraints maybe
-    res = d.create_notebook(rid, name, uid, desc, write_list)
+    res = d.create_notebook(rid, name, uid, desc, write_list, public)
     return json.dumps(smsg(data=res))
 
 
@@ -257,7 +257,7 @@ def friend():
     return json.dumps(smsg(data=res))
 
 
-@app.route("/api/friendRequests/", methods=["GET"])
+@app.route("/api/friendRequests", methods=["GET"])
 def friend_requests():
     """
     GET方法获取用户的好友请求
@@ -281,11 +281,54 @@ def friend_requests():
     return json.dumps(smsg(data=res))
 
 
+@app.route("/api/notebookRequests", methods=["GET"])
+def notebook_requests():
+    """
+    获取其他用户对该用户发起的笔记本请求
+
+    :return:
+    """
+    token = request.cookies.get("token")
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    uid = info['uid']
+    res = d.get_my_unauthed_notebooks(uid)
+    return json.dumps(smsg(data=res))
+
+
+@app.route('/api/notebookAuth', methods=["GET"])
+def auth_notebook():
+    token = request.cookies.get("token")
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    uid = info['uid']
+    nid = request.args.get("nid")
+    act = request.args.get("act")
+    res = d.auth_notebook(uid, nid)
+    return json.dumps(smsg(data=res))
+
+
+'''
 @app.route('/web/<p>', methods=["GET"])
 def web(p):
     return send_from_directory(html_path, p)
-
-
+'''
 
 
 

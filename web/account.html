@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <script src="node_modules/jquery/dist/jquery.js"></script>
+    <script src="node_modules/popper.js/dist/umd/popper.js"></script>
     <script src="node_modules/bootstrap/dist/js/bootstrap.js"></script>
     <script src="node_modules/vue/dist/vue.js"></script>
     <script src="node_modules/axios/dist/axios.js"></script>
@@ -42,13 +43,51 @@
                 </div>
             </div>
             <div class="zf-card-container">
-                <div class="zf-card" v-for="notebook in account_info.notebooks">
+                <ul class="nav nav-tabs">
+                    <li class="nav-item"><a class="nav-link" v-bind:class="{'active':tab=='public'}"
+                            v-on:click="switch_tab('public')" href="#">公开笔记本</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" v-bind:class="{'active':tab=='private'}" href="#"
+                            v-on:click="switch_tab('private')">私人笔记本</a>
+                    </li>
+                </ul>
+                <div v-show="tab=='public'" class="zf-card" v-for="notebook in account_info.public_notebooks">
                     <div class="row" style="align-items: flex-end">
                         <div class="text-dark zf-text-block" style="font-size: 19px">
                             <a v-bind:href="'notebook.html?' + 'id=' + notebook.id[1]">{{notebook.name}}</a>
                         </div>
                         <div class="text-center text-info zf-text-block" style="font-size: 15px">
                             {{notebook.desc}}
+                        </div>
+                        <div class="drop-down" style="margin-left: auto">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdown2button"
+                                data-toggle="dropdown2">
+                                更多操作
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#">在主页上显示</a>
+                                <a class="dropdown-item" href="#">取消在主页上显示</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-show="tab=='private'" class="zf-card" v-for="notebook in account_info.private_notebooks">
+                    <div class="row" style="align-items: flex-end">
+                        <div class="text-dark zf-text-block" style="font-size: 19px">
+                            <a v-bind:href="'notebook.html?' + 'id=' + notebook.id[1]">{{notebook.name}}</a>
+                        </div>
+                        <div class="text-center text-info zf-text-block" style="font-size: 15px">
+                            {{notebook.desc}}
+                        </div>
+                        <div class="drop-down" style="margin-left:auto">
+                            <button class="btn btn-sm dropdown-toggle" type="button" id="dropdown2button"
+                                data-toggle="dropdown">
+                                更多操作
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#">在主页上显示</a>
+                                <a class="dropdown-item" href="#">取消在主页上显示</a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -113,6 +152,30 @@
                             <textarea type="text" class="form-control"
                                 v-model="input.new_notebook_modal.desc"></textarea>
                         </div>
+                        <div style="display: flex;align-items: center">
+                            <input type="checkbox" style="width: 20px;height: 20px"
+                                v-model="input.new_notebook_modal.private_mode">
+                            <div>&nbsp;作为私人笔记本（选定的账号才有权限写）</div>
+                        </div>
+                        <div class="form-group" v-show="input.new_notebook_modal.private_mode">
+                            <!--此处使用空格分割的字符串来表示共同作者，下面会显示好友列表，点击好友列表就会把好友加入-->
+                            <div class="col-form-label">共同作者(输入用户名并以空格分隔)</div>
+                            <input id="input-nb-name" type="text" class="form-control"
+                                v-model="input.new_notebook_modal.writers_str">
+                            <div style="font-size: 12px;margin-top:10px">邀请好友加入共同作者</div>
+                            <div class="zf-sm-user-container">
+                                <div class="zf-user-tag" v-for="friend in friends"
+                                    v-show="!(input.new_notebook_modal.writers_str.split(' ').includes(friend.id[1]))"
+                                    v-on:click="input.new_notebook_modal.writers_str += ' ' + friend.id[1]">
+                                    <div>{{friend.name}}</div>
+                                    <div>({{friend.id[1]}})</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" style="display: flex;align-items: center">
+                            <input type="checkbox" style="width: 20px;height: 20px">
+                            <div>&nbsp;在主页上显示</div>
+                        </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
                             <button type="button" class="btn btn-primary" v-on:click="create_notebook()">确认</button>
@@ -140,7 +203,8 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
-                            <button type="button" class="btn btn-primary" v-on:click="add_friend(input.new_friend_modal.id)">确认</button>
+                            <button type="button" class="btn btn-primary"
+                                v-on:click="add_friend(input.new_friend_modal.id)">确认</button>
                         </div>
                     </div>
                 </div>
