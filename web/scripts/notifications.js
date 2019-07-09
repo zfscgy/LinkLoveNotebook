@@ -102,6 +102,28 @@ let notfis = new Vue({
                 }
             }
             client.get_unauthed_notebooks(next)
+        },
+        auth_notebook: function(nid, act) {
+            let that = this
+            let word = ["接受", "拒绝"]
+            let next = {
+                then(res) {
+                    if (res.msg == "ok") {
+                        if (res.data.dbmsg == "ok") {
+                            alert("您已经成功" + word[act - 1] + "该笔记本邀请")
+                            that.get_unauthed_notebooks()
+                        }
+                        else {
+                            alert(dbmsgs[res.data.dbmsg])
+                        }
+                    }
+                },
+                catch(err) {
+                    console.log(err)
+                    alert(err)
+                }         
+            }
+            client.auth_notebook(nid, act, next)
         }
     }
 })

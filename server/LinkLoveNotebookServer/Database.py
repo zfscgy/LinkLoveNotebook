@@ -217,10 +217,10 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:lis
 
     # 检查写权限用户是否存在
     writer_uid_list = []
-    for rid in writer_list:
-        writer = session.query(User).filter(User.rid == rid).one_or_none()
+    for writer_rid in writer_list:
+        writer = session.query(User).filter(User.rid == writer_rid).one_or_none()
         if not writer:
-            return dbmsg("21", data=rid)
+            return dbmsg("21", data=writer_rid)
         writer_uid_list.append(writer.uid)
     # 写权限列表的第一个人必须是创建者
     if len(writer_uid_list) > 0 and writer_uid_list[0] != creator_id:
@@ -278,6 +278,9 @@ def auth_notebook(uid:int, nid:int, act:int):
         return dbmsg("74")
     elif user_notebook_mode.write_auth == 3:
         return dbmsg("73")
+    # 由于在UserNotebookMode里面，3表示 拒绝写权限。
+    if act == 2:
+        act = 3
     user_notebook_mode.write_auth = act
     session.commit()
     return dbmsg("ok")
@@ -410,7 +413,7 @@ def get_account_info(account_id):
 def get_my_unauthed_notebooks(uid:int):
     session = Session()
     notebooks = session.query(UserNotebookMode).\
-        filter(User.uid == uid, UserNotebookMode.write_auth == 0).all()
+        filter(UserNotebookMode.uid == uid, UserNotebookMode.write_auth == 0).all()
     notebooks_json = []
     for notebook_mode in notebooks:
         notebook = notebook_mode.notebook

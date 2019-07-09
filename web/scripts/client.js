@@ -379,6 +379,7 @@ let client =
         axios.get(server + "/api/notebookAuth",
             {
                 params: {
+                    nid: nid,
                     act: act
                 }
             })

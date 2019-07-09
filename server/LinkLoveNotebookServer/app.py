@@ -320,7 +320,7 @@ def auth_notebook():
     uid = info['uid']
     nid = request.args.get("nid")
     act = request.args.get("act")
-    res = d.auth_notebook(uid, nid)
+    res = d.auth_notebook(uid, nid, act)
     return json.dumps(smsg(data=res))
 
 

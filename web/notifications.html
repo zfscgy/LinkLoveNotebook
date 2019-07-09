@@ -145,10 +145,10 @@
                 </div>
                 <div style="display:flex; align-items: center; margin: 10px">
                     <div class="btn-group-vertical">
-                        <button class="btn btn-primary">
+                        <button class="btn btn-primary" v-on:click="auth_notebook(proposal.id[0], 1)">
                             同意该邀请
                         </button>
-                        <button class="btn btn-warning">
+                        <button class="btn btn-warning" v-on:click="auth_notebook(proposal.id[0], 2)">
                             拒绝该邀请
                         </button>
                     </div>
