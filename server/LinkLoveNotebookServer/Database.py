@@ -133,6 +133,53 @@ class VoteHistory(base):
 
 Index("ix_vh_u_c", VoteHistory.uid, VoteHistory.cid)
 
+
+class ServerData(base):
+    __tablename__ = "server_data"
+    key = Column(String(30), primary_key=True)
+    value = Column(BigInteger)
+
+class UserPoints(base):
+    __tablename__ = "user_points"
+    uid = Column(Integer, ForeignKey(User.uid), primary_key=True)
+    points = Column(BigInteger, default=0)
+    user = relationship(User, backref="points")
+
+
+
+class UserPointRecord(base):
+    """
+    用户得到的积分记录
+    """
+    __tablename__ = "point_record"
+    rid = Column(BigInteger, primary_key=True, autoincrement=True)
+    uid = Column(Integer, ForeignKey(User.uid))
+    num = Column(BigInteger)
+    #                  reward_id               giver_id
+    # 0 表示 空投，     无效                   无效
+    # 1 表示被点赞      被点赞content cid      点赞人
+    # 7 表示被取消点赞  被点赞的content cid    点赞人
+    # 2 表示被奖赏      被奖赏content cid      奖赏人
+    # 3 表示创建笔记本  创建笔记本的nid        无效
+    # 4 表示发布内容    发布的内容的cid        无效
+    # 5 表示奖赏他人    奖赏给他人的cid        他人的id
+    # 6 系统扣除
+    reward_type = Column(Integer)
+    reward_id = Column(BigInteger)
+    giver_id = Column(BigInteger)
+
+Index("ix_u_p_r", UserPointRecord.giver_id, UserPointRecord.reward_id)
+
+
+class UserTransactions(base):
+    __tablename__ = "user_transactions"
+    tid = Column(BigInteger, primary_key=True, autoincrement=True)
+    uid = Column(Integer, ForeignKey(User.uid))
+    amount = Column(BigInteger)
+    address = Column(String(256))
+    tx_hash = Column(String(256))
+
+
 engine = create_engine("mysql+pymysql://root:zhengfei@127.0.0.1/note01?charset=utf8",
                        encoding=encoding)
 Session = sessionmaker()
@@ -182,6 +229,17 @@ def user_register(rid: str, key_md5:str, name:str, avatar:str, desc:str):
     )
     session.add(user)
     session.commit()
+    # # 积分操作 # #
+    # 用户积分记录初始化
+    uid = session.query(User).filter_by(rid=rid).one().uid
+    user_points = UserPoints(
+        uid=uid,
+        points=0
+    )
+    session.add(user_points)
+    session.commit()
+    # 发放初始积分
+    transfer_points(uid, -1, -1, PP.initial_points, 0)
     return dbmsg()
 
 
@@ -213,8 +271,6 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:lis
     else:
         mode = 4
 
-
-
     # 检查写权限用户是否存在
     writer_uid_list = []
     for writer_rid in writer_list:
@@ -222,9 +278,16 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:lis
         if not writer:
             return dbmsg("21", data=writer_rid)
         writer_uid_list.append(writer.uid)
+    # # 积分操作 # #
+    # 检查是否有足够的积分，如果有，则扣分
+    if get_user_points(creator_id)["data"] < PP.create_notebook_cost:
+        return dbmsg("a1")
+
     # 写权限列表的第一个人必须是创建者
     if len(writer_uid_list) > 0 and writer_uid_list[0] != creator_id:
         return dbmsg("s2")
+
+
     notebook = Notebook(
         rid=rid,
         name=name,
@@ -237,10 +300,14 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:lis
 
     session.add(notebook)
     notebook = session.query(Notebook).filter_by(rid=rid).one()
+    if mode == 2:
+        creator_auth = 2
+    else:
+        creator_auth = 1
     session.add(UserNotebookMode(
         uid=creator_id,
         nid=notebook.nid,
-        write_auth=1,
+        write_auth=creator_auth,
         show_mode=public
     ))
     for uid in writer_uid_list[1:]:
@@ -250,7 +317,11 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:lis
             write_auth=0,
             show_mode=0
         ))
+
     session.commit()
+    # # 积分操作 ##
+    # 注意创建笔记本减少积分，所以积分是负数
+    transfer_points(creator_id, -1, notebook.nid, -PP.create_notebook_cost, 3)
     return dbmsg("ok")
 
 
@@ -504,8 +575,8 @@ def get_notebook_contents(nid:int, start:int, end:int, uid=None):
         downvote_count = session.query(VoteHistory).\
             filter_by(cid=content.cid, vote_type=1).count()
         reward_sum = session.query(f.sum(VoteHistory.amount)).\
-            filter_by(cid=content.cid, vote_type=3).scalar()
-        if reward_sum == None:
+            filter_by(cid=content.cid, vote_type=2).scalar()
+        if reward_sum is None:
             reward_sum = 0
         else:
             reward_sum = int(reward_sum)
@@ -516,6 +587,8 @@ def get_notebook_contents(nid:int, start:int, end:int, uid=None):
                 filter_by(cid=content.cid, vote_type=1, uid=uid).count()
             my_reward = session.query(f.sum(VoteHistory.amount)).\
                 filter_by(cid=content.cid, uid=uid, vote_type=2).scalar()
+            if my_reward is None:
+                my_reward = 0
         else:
             my_upvote = 0
             my_downvote = 0
@@ -532,11 +605,18 @@ def write_notebook_content(uid:int, nid:int, content:str, imgs:str="", ref:int=0
                                   time=datetime.datetime.today(),
                                   content=content, imgs=imgs,
                                   ref=ref)
+
+
     # 检查格式
     if len(imgs) > 320:
         return dbmsg("s1")
 
     session = Session()
+    # # 积分操作 ##
+    # 检查积分是否足够
+    if get_user_points(uid)['data'] < PP.reply_notebook_cost:
+        return dbmsg("a1")
+
     # 检查回复的楼层是否存在
     if ref != 0:
         ref_content = session.query(NotebookContent).filter_by(nid=nid, floor=ref).\
@@ -557,6 +637,11 @@ def write_notebook_content(uid:int, nid:int, content:str, imgs:str="", ref:int=0
     notebook.content_length += 1
     session.add(new_content)
     session.commit()
+    new_content = session.query(NotebookContent).filter_by(
+        uid=uid, nid=nid, floor=new_content.floor
+    ).one()
+    # 扣除积分
+    transfer_points(uid, -1, new_content.cid, - PP.reply_notebook_cost, 4)
     return dbmsg("ok")
 
 
@@ -565,7 +650,7 @@ def write_notebook_content(uid:int, nid:int, content:str, imgs:str="", ref:int=0
 # 2 表示 uid1 同意 uid2 好友申请
 # 3 表示 uid1 拒绝 uid2 好友申请
 # 4 表示 uid1 删除与 uid2 的好友关系
-def make_friend(uid1:int, uid2:int, act:int):
+def make_friend(uid1: int, uid2: int, act:int):
     if uid1 == uid2:
         return dbmsg("52")
     session = Session()
@@ -727,6 +812,7 @@ def get_my_friend_applications(uid:int):
 # mode = 1: upvote
 # mode = 2: downvote
 # mode = 3: reward
+# mode = 4: cancel vote
 def vote_content(cid:int, uid:int, vtype:int, amount:int=0):
     session = Session()
     content = session.query(NotebookContent).filter_by(cid=cid).one_or_none()
@@ -739,26 +825,131 @@ def vote_content(cid:int, uid:int, vtype:int, amount:int=0):
     vote = session.query(VoteHistory).\
         filter(VoteHistory.nid == nid,
                VoteHistory.cid == cid, VoteHistory.uid == uid,
-               or_(VoteHistory.vote_type == 1, VoteHistory.vote_type == 2)).\
+               or_(VoteHistory.vote_type == 0, VoteHistory.vote_type == 1)).\
         one_or_none()
     reward = session.query(VoteHistory).\
         filter(VoteHistory.nid == nid,
                VoteHistory.cid == cid, VoteHistory.uid == uid,
-               VoteHistory.vote_type == 3).\
+               VoteHistory.vote_type == 2).\
         one_or_none()
     if vtype == 1 or vtype == 2:
+        if vtype == 1:
+            # 被点赞者受到了奖赏
+            transfer_points(content.uid, uid, content.cid, PP.upvote_reward, 1)
         if vote is None:
-            new_vote = VoteHistory(cid=cid, nid=nid, uid=uid, vote_type=vtype, amount=0,
+            new_vote = VoteHistory(cid=cid, nid=nid, uid=uid, vote_type=vtype - 1, amount=0,
                                time=datetime.datetime.today())
             session.add(new_vote)
         else:
-            vote.vote_type = vtype
+            vote.vote_type = vtype - 1
     elif vtype == 3:
+        # 如果要奖赏某个用户，先要看看是否足够
+        if get_user_points(uid)['data'] < amount:
+            return dbmsg("a1")
         if reward is None:
-            new_reward = VoteHistory(cid=cid, nid=nid, uid=uid, vote_type=vtype, amount=amount,
+            new_reward = VoteHistory(cid=cid, nid=nid, uid=uid, vote_type=2, amount=amount,
                                      time=datetime.datetime.today())
             session.add(new_reward)
         else:
             reward.amount += amount
+        # 产生一笔被奖赏的积分转移
+        transfer_points(content.uid, uid, content.cid, amount, 2)
+
+    elif vtype == 4:
+        if vote is None:
+            pass
+        else:
+            # 不删除记录，只是把vtype设置为3
+            vote.vote_type = 3
+            # 尝试撤回被点赞者的积分
+            # 如果此时正好被点赞者已经把积分用掉了，那么也没办法啦！
+            transfer_points(content.uid, uid, content.cid, -PP.upvote_reward, 7)
+    else:
+        return dbmsg("s0")
     session.commit()
     return dbmsg("ok")
+
+def get_user_points(uid):
+    session = Session()
+    user_points = session.query(UserPoints).filter_by(uid=uid).one_or_none()
+    if not user_points:
+        return dbmsg("21")
+    return dbmsg(data=user_points.points)
+
+def transfer_points(uid1, uid2, reward_id, amount, transfer_type):
+    """
+    该函数仅仅在服务器内部运行，
+    point的流动方向以从uid2到uid1为正方向
+
+    :param uid1:
+    :param uid2:
+    :param reward_id
+    :param amount:
+    :param transfer_type
+            0 空投
+            1 被点赞
+            2 被奖赏
+            3 创建笔记本
+            4 发布内容
+            6 系统扣除
+            7 被取消点赞
+            注： 5 奖赏他人被包含在被奖赏中，因此这里无效
+    :return: 0 交易成功
+             1 交易失败
+             2 交易格式错误
+    """
+    session = Session()
+    if transfer_type in [0, 1, 3, 4, 6, 7]:
+        # 用户和系统之间的收支
+        u1_point = session.query(UserPoints).filter_by(uid=uid1).one()
+        record = UserPointRecord(
+            uid=uid1,
+            num=amount,
+            reward_type=transfer_type,
+            reward_id=reward_id,
+            giver_id=uid2
+        )
+        session.add(record)
+        if u1_point.points + amount < 0:
+            return 1
+        u1_point.points += amount
+        session.commit()
+        return 0
+    else:
+        if not transfer_type == 2:
+            return 2
+        u1_point = session.query(UserPoints).filter_by(uid=uid1).one()
+        u2_point = session.query(UserPoints).filter_by(uid=uid2).one()
+        if u2_point.points - amount < 0:
+            return 1
+        u1_point.points += amount
+        u2_point.points -= amount
+        record = UserPointRecord(
+            uid=uid1,
+            num=amount,
+            reward_type=transfer_type,
+            reward_id=reward_id,
+            giver_id=uid2
+        )
+        session.add(record)
+        session.commit()
+        return 0
+
+
+def user_cashout(uid, amount, address, tx_hash):
+    """
+    某个用户提现之后，积分从官方账户转到用户账户的记录
+    :param uid:
+    :param amount:
+    :param address:
+    :param tx_hash:
+    :return: 无
+    """
+    session = Session()
+    transaction = UserTransactions(
+        uid=uid,
+        amount=amount,
+        address=address,
+        tx_hash=tx_hash
+    )
+    session.add(transaction)

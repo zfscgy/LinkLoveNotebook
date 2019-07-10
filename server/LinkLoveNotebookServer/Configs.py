@@ -42,6 +42,8 @@ databaseMsgs = {
     "74": "该笔记本是公开笔记本，操作无效",
     # vote_contetn
     "81": "无法找到该id对应的笔记本内容",
+    # abount points
+    "a1": "没有足够的积分进行该操作",
     # string length check failed
     "s0": "查询格式错误",
     "s1": "字符串长度超标",
@@ -59,4 +61,13 @@ serverMsg = {
 class ServerParam:
     default_notebook_len = 20
 
+
+class PointParam:
+    initial_points = 100000
+    create_notebook_cost = 500
+    reply_notebook_cost = 50
+    upvote_reward = 5
+
+
 SP = ServerParam
+PP = PointParam

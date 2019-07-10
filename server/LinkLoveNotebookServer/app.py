@@ -324,6 +324,32 @@ def auth_notebook():
     return json.dumps(smsg(data=res))
 
 
+@app.route('/api/rewardContent', methods=["GET"])
+def reward_content():
+    """
+    v  表示奖赏类型
+    1 赞同
+    2 反对
+    3 打赏
+    4 取消（取消赞同 或 反对）
+    :return:
+    """
+    token = request.cookies.get("token")
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    cid = request.args.get("cid", type=str)
+    vtype = request.args.get("v", type=int)
+    amount = request.args.get("amount", type=int)
+    res = d.vote_content(cid, info["uid"], vtype, amount)
+    return json.dumps(smsg(data=res))
 '''
 @app.route('/web/<p>', methods=["GET"])
 def web(p):
