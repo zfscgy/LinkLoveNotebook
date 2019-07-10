@@ -367,7 +367,7 @@ let client =
      */
     get_unauthed_notebooks(next) {
         axios.get(server + "/api/notebookRequests")
-            .then(res => { console.log(res);next.then(res.data) })
+            .then(res => { console.log(res); next.then(res.data) })
             .catch(err => { next.catch(err) })
     },
     /**,
@@ -381,6 +381,25 @@ let client =
                 params: {
                     nid: nid,
                     act: act
+                }
+            })
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
+    },
+
+    /**
+     * 参数：
+     * cid:
+     * vtype: 1 赞同 2  反对 3 打赏（需要amount） 4 取消赞或者踩
+     * 
+     */
+    vote_content(cid, vtype, amount, next) {
+        axios.get(server + "/api/rewardContent",
+            {
+                params: {
+                    cid: cid,
+                    v: vtype,
+                    amount: amount
                 }
             })
             .then(res => { next.then(res.data) })

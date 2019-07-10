@@ -1,13 +1,11 @@
 let next = {
     then(res) {
         console.log(res)
-        if(res.msg == 'ok'){
-            if(res.data.dbmsg == "ok")
-            {
+        if (res.msg == 'ok') {
+            if (res.data.dbmsg == "ok") {
                 window.location = "account.html"
             }
-            else
-            {
+            else {
                 let err_msg = dbmsgs[res["data"]["dbmsg"]]
                 alert(err_msg)
             }
@@ -16,8 +14,7 @@ let next = {
             alert(smsgs[res.msg])
         }
     },
-    catch(err)
-    {
+    catch(err) {
         alert(err)
         console.log(err)
     }
@@ -29,18 +26,18 @@ let login = new Vue({
         // "register-tab" for register
         selected: "login-tab",
         input: {
-            id:"",
-            priv_key:"",
-            name:""
+            id: "",
+            priv_key: "",
+            name: ""
         }
-     },
+    },
     methods: {
         switch_tab(event) {
             console.log("Switch tab to " + event.currentTarget.id)
             this.selected = event.currentTarget.id
         },
         register() {
-            let res = client.register_account(this.input.id, this.input.priv_key, this.input.name, "0", "", next)
+            let res = client.register_account(this.input.id, this.input.priv_key, this.input.name, "/web/res/imgs/img1.jpg", "", next)
         },
         login() {
             let res = client.login(this.input.id, this.input.priv_key, next)

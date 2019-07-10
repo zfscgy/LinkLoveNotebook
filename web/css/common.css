@@ -143,6 +143,19 @@ input[type=text]::-ms-clear {
     white-space: pre-line
 }
 
+.zf-content-container .zf-content-extra {
+    margin-left: 30px;
+    margin-right: 30px;
+    padding-left: 15px;
+    border-left: 2px solid gray;
+    display: flex
+}
+
+.zf-content-container .zf-content-extra-label {
+    font-size: 12px;
+    margin: 5px
+}
+
 .zf-reply-box {
     margin: 30px;
 }

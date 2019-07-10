@@ -2,7 +2,7 @@ var notebook = new Vue({
     el: "#notebook",
     data: {
         info: {
-            id: ["",-1],
+            id: ["", -1],
             name: "",
             author: {
                 name: "",
@@ -41,7 +41,7 @@ var notebook = new Vue({
                 },
                 catch(err) {
                     console.log(err)
-                    alert(err) 
+                    alert(err)
                 }
             }
             client.get_notebook_info(id, next)
@@ -50,20 +50,20 @@ var notebook = new Vue({
             console.log(this.info)
             let nid = this.info.id[0]
             let that = this
-            this.contents = client.get_notebook_contents(nid, this.content_start, this.content_end, 
+            this.contents = client.get_notebook_contents(nid, this.content_start, this.content_end,
                 {
-                    then(res){
-                        if(res.msg!="ok"){
+                    then(res) {
+                        if (res.msg != "ok") {
                             alert(smsgs[res.msg])
                         }
-                        else if(res.data.dbmsg!="ok") {
+                        else if (res.data.dbmsg != "ok") {
                             alert(dbmsgs[res.data.dbmsg])
                         }
                         else {
                             that.contents = res.data.data
                         }
                     },
-                    catch(err){
+                    catch(err) {
                         console.log(err)
                         alert(err)
                     }
@@ -73,7 +73,7 @@ var notebook = new Vue({
             let that = this
             let next = {
                 then(res) {
-                    if (res.msg != "ok") { 
+                    if (res.msg != "ok") {
                         alert(smsgs[res.msg])
                     }
                     else if (res.data.dbmsg != "ok") {
@@ -90,6 +90,60 @@ var notebook = new Vue({
             }
             let nid = this.info.id[0]
             client.write_notebook_content(nid, this.input.new_content, "", 0, next)
+        },
+        /**
+         * cid
+         * voted: 0 未赞/踩过 1 已经赞/踩过 
+         * type: 0 赞/取消赞 1 踩/取消踩
+         */
+        vote_content(index, type) {
+            let content = this.contents[index]
+            let vtype = 0
+            voted = content.upvote[1] + content.downvote[1]
+            if (type == 0 && content.upvote[1] == 0) {
+                // 点赞
+                vtype = 1
+            }
+            else if(type==1 && content.downvote[1] == 0) {
+                vtype = 2
+            }
+            else{
+                vtype = 4
+            }
+            let that = this
+            let next = {
+                then(res){
+                    if(res.msg == "ok" && res.data.dbmsg == "ok") {
+                        if(vtype == 1){
+                            content.downvote[0] -= content.downvote[1]
+                            content.downvote[1] = 0
+                            content.upvote[1] = 1
+                            content.upvote[0] += 1
+                        }
+                        else if(vtype == 2){
+                            content.upvote[0] -= content.upvote[1]
+                            content.upvote[1] = 0
+                            content.downvote[1] = 1
+                            content.downvote[0] += 1
+                        }
+                        else {
+                            content.upvote[0] -= content.upvote[1]
+                            content.downvote[0] -= content.downvote[1]
+                            content.upvote[1] = 0
+                            content.downvote[1] = 0
+                        }
+                        console.log(content)
+                        Vue.set(that.contents, index, content)
+                    }
+                    else {
+                        console.log("Server error while vote contet:", res)
+                    }
+                },
+                catch(err) {
+                    console.log("Network error while vote content:", err)
+                }
+            }
+            client.vote_content(content.cid, vtype, 0, next)
         }
     }
 })

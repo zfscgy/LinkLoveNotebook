@@ -27,7 +27,8 @@
                     </ul>
                     <div>
                         <a href="notifications.html">
-                            <img v-bind:src="'res/imgs/img1.jpg'" style="height: 2rem; width: 2rem; border-radius: 0.3rem">
+                            <img v-bind:src="'res/imgs/img1.jpg'"
+                                style="height: 2rem; width: 2rem; border-radius: 0.3rem">
                         </a>
                     </div>
                 </div>
@@ -45,7 +46,7 @@
                 </div>
             </div>
             <hr>
-            <div class="zf-content-container" v-for="content in contents">
+            <div class="zf-content-container" v-for="content, index in contents" v-bind:key="content.cid">
                 <div class="row">
                     <img v-bind:src="content.author.avatar" class="zf-content-mark"></img>
                     <div>
@@ -58,6 +59,23 @@
                         <div class="zf-content-body-text">
                             <div>{{content.content}}</div>
                         </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="zf-content-extra">
+                        <div class="zf-content-extra-label">
+                            <a v-on:click="vote_content(index, 0)" style="cursor: pointer">
+                                {{content.upvote[1] == 1?"已":""}}赞
+                                {{content.upvote[0] > 0?'(' + content.upvote[0].toString() + ')':''}}
+                            </a>
+                        </div>
+                        <div class="zf-content-extra-label">
+                            <a v-on:click="vote_content(index, 1)" style="cursor: pointer">
+                                    {{content.downvote[1] == 1?"已":''}}踩
+                                    {{content.downvote[0] > 0?'(' + content.downvote[0].toString() + ')':''}}
+                            </a>
+                        </div> 
+                        <div class="zf-content-extra-label"><a style="cursor: pointer">打赏</a></div>
                     </div>
                 </div>
             </div>

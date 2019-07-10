@@ -1,7 +1,7 @@
 let notfis = new Vue({
     el: "#notifications",
     data: {
-        avatar: "res/imgs/img1.jpg",
+        account_info: null,
         cur_tab: "my_proposals",
         my_proposals: [{
             name: "笔记本1",
@@ -11,14 +11,7 @@ let notfis = new Vue({
             rejeted: [],
             unauthed: [{ id: [1, 'cwk'], name: "cwk", avatar: "res/imgs/img1.jpg" }],
         }],
-        unauthed_proposals: [{
-            name: "笔记本2",
-            creator: { id: [1, 'cwk'], name: "cwk", avatar: "res/imgs/img1.jpg" },
-            desc: "FLXG",
-            authed: [{ id: [1, 'cwk'], name: "cwk", avatar: "res/imgs/img1.jpg" }],
-            rejeted: [],
-            unauthed: [{ id: [0, 'zfscgy'], name: "zf", avatar: "res/imgs/img1.jpg" }]
-        }],
+        unauthed_proposals: [],
         friend_requests: [
         ],
     },
@@ -129,3 +122,13 @@ let notfis = new Vue({
 })
 notfis.get_friend_requests()
 notfis.get_unauthed_notebooks()
+client.get_my_account_info({
+    then(res) {
+        if(res.msg=="ok" && res.data.dbmsg == "ok") {
+            notfis.account_info = res.data.data
+        }
+    },
+    catch(err) {
+        console.log(err)
+    }
+})
