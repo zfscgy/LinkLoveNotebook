@@ -11,6 +11,7 @@
     <script src="scripts/client.js"></script>
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
     <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/common.css">
     <style type="text/css">
         .selected {
             font-weight: bolder
@@ -28,10 +29,12 @@
         <div class="row" style="margin-top: 40px"></div>
         <div class="row justify-content-around">
             <div id="login-tab" class="col-5 zf-tab-title text-muted text-center" v-on:click="switch_tab($event)">
-                <div v-bind:class="{'zf-selected': selected=='login-tab'}" style="padding-left:30px; padding-right: 30px">登录</div>
+                <div v-bind:class="{'zf-selected': selected=='login-tab'}"
+                    style="padding-left:30px; padding-right: 30px">登录</div>
             </div>
             <div id="register-tab" class="col-5 zf-tab-title text-muted text-center" v-on:click="switch_tab($event)">
-                <div v-bind:class="{'zf-selected': selected=='register-tab'}" style="padding-left:30px; padding-right: 30px">注册</div>
+                <div v-bind:class="{'zf-selected': selected=='register-tab'}"
+                    style="padding-left:30px; padding-right: 30px">注册</div>
             </div>
         </div>
         <div v-show="selected=='login-tab'" class="container w-75 zf-tab-body">
@@ -44,9 +47,9 @@
             </div>
             <div class="row zf-horizental-input-row">
                 <div class="zf-horizental-input-label">
-                    <div>私钥</div>
+                    <div>密码</div>
                 </div>
-                <input class="col-8 form-control" v-model="input.priv_key">
+                <input type="password" class="col-8 form-control" v-model="input.priv_key">
             </div>
             <div class="row zf-horizental-input-row">
                 <button class="btn btn-primary" style="padding-left: 20px; padding-right: 20px" v-on:click="login()">
@@ -63,9 +66,18 @@
             </div>
             <div class="row zf-horizental-input-row">
                 <div class="zf-horizental-input-label">
-                    <div>私钥</div>
+                    <div>密码</div>
                 </div>
-                <input class="col-8 form-control" v-model="input.priv_key">
+                <input type="password" class="col-8 form-control" v-model="input.priv_key">
+            </div>
+            <div class="zf-error-lable" v-show="!check_password()">
+                两次输入的密码应该一样</div>
+            <div class="row zf-horizental-input-row">
+                <div class="zf-horizental-input-label">
+                    <div>再次输入密码</div>
+                </div>
+                <input type="password" class="col-8 form-control" v-bind:class="{'zf-has-error':!check_password()}"
+                    v-model="input.priv_key_2">
             </div>
             <div class="row zf-horizental-input-row">
                 <div class="zf-horizental-input-label">

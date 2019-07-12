@@ -6,7 +6,7 @@ from itsdangerous import TimedJSONWebSignatureSerializer, BadSignature, Signatur
 from Configs import *
 
 secret_key = "zzzfff"
-token_expiration_time = 1000
+token_expiration_time = 3600
 
 
 '''

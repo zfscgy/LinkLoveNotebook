@@ -21,6 +21,11 @@ var account = new Vue({
             new_friend_modal:
             {
                 id: ""
+            },
+            login:
+            {
+                rid:"",
+                pw:""
             }
         },
         tab: "public",

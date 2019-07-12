@@ -28,6 +28,7 @@ let login = new Vue({
         input: {
             id: "",
             priv_key: "",
+            priv_key_2: "",
             name: ""
         }
     },
@@ -36,7 +37,14 @@ let login = new Vue({
             console.log("Switch tab to " + event.currentTarget.id)
             this.selected = event.currentTarget.id
         },
+        check_password() {
+            return this.input.priv_key == this.input.priv_key_2
+        },
         register() {
+            if(!this.check_password()) {
+                alert("密码前后输入不一致，请重新输入")
+                return
+            }
             let res = client.register_account(this.input.id, this.input.priv_key, this.input.name, "/web/res/imgs/img1.jpg", "", next)
         },
         login() {

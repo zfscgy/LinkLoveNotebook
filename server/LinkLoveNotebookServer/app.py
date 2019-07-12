@@ -350,6 +350,15 @@ def reward_content():
     amount = request.args.get("amount", type=int)
     res = d.vote_content(cid, info["uid"], vtype, amount)
     return json.dumps(smsg(data=res))
+
+
+@app.route("/api/recentNotebooks", methods=["GET"])
+def recent_notebooks():
+    start = request.args.get("start", type=int)
+    end = request.args.get("end", type=int)
+    res = d.get_top_notebooks(start, end)
+    return smsg(data=res)
+
 '''
 @app.route('/web/<p>', methods=["GET"])
 def web(p):

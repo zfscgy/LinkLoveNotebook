@@ -1,7 +1,9 @@
 let notfis = new Vue({
     el: "#notifications",
     data: {
-        account_info: null,
+        account_info: {
+            "avatar":""
+        },
         cur_tab: "my_proposals",
         my_proposals: [{
             name: "笔记本1",

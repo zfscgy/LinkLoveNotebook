@@ -4,9 +4,8 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Text, \
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.sql import and_, or_, functions as f
-
+import sqlalchemy as sql
 from Configs import *
-
 
 base = declarative_base()
 
@@ -95,6 +94,8 @@ class UserNotebookMode(base):
     write_auth = Column(Integer)
     # 0 表示不显示在主页上， 1 表示显示在主页上
     show_mode = Column(Integer)
+    # 最后一次操作时间
+    last_op_time = Column(DateTime, index=True)
     PrimaryKeyConstraint(uid, nid)
     user = relationship(User, backref="preferred_notebooks")
     notebook = relationship(Notebook, backref="preferred_writers")
@@ -308,7 +309,8 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:lis
         uid=creator_id,
         nid=notebook.nid,
         write_auth=creator_auth,
-        show_mode=public
+        show_mode=public,
+        last_op_time=datetime.datetime.today()
     ))
     for uid in writer_uid_list[1:]:
         session.add(UserNotebookMode(
@@ -353,6 +355,7 @@ def auth_notebook(uid:int, nid:int, act:int):
     if act == 2:
         act = 3
     user_notebook_mode.write_auth = act
+    user_notebook_mode.last_op_time = datetime.datetime.today()
     session.commit()
     return dbmsg("ok")
 
@@ -384,10 +387,10 @@ def get_my_account_info(uid:int):
         return dbmsg("21")
     public_notebooks = session.query(UserNotebookMode).\
         filter(UserNotebookMode.uid==uid, or_(UserNotebookMode.write_auth==2)).\
-        all()
+        .order_by(sql.desc(UserNotebookMode.last_op_time)).all()
     private_notebooks = session.query(UserNotebookMode). \
-        filter(UserNotebookMode.uid == uid, or_(UserNotebookMode.write_auth==1)).\
-        all()
+        filter(UserNotebookMode.uid == uid, or_(UserNotebookMode.write_auth==1)). \
+        order_by(sql.desc(UserNotebookMode.last_op_time)).all()
     public_notebooks_json = []
     for notebook_mode in public_notebooks:
         notebook = notebook_mode.notebook
@@ -576,6 +579,7 @@ def get_notebook_contents(nid:int, start:int, end:int, uid=None):
             filter_by(cid=content.cid, vote_type=1).count()
         reward_sum = session.query(f.sum(VoteHistory.amount)).\
             filter_by(cid=content.cid, vote_type=2).scalar()
+        # scalar() 返回的是 Decimal，需要转换成int才可以转JSON
         if reward_sum is None:
             reward_sum = 0
         else:
@@ -589,6 +593,8 @@ def get_notebook_contents(nid:int, start:int, end:int, uid=None):
                 filter_by(cid=content.cid, uid=uid, vote_type=2).scalar()
             if my_reward is None:
                 my_reward = 0
+            else:
+                my_reward = int(my_reward)
         else:
             my_upvote = 0
             my_downvote = 0
@@ -628,11 +634,14 @@ def write_notebook_content(uid:int, nid:int, content:str, imgs:str="", ref:int=0
         filter_by(nid=nid).with_lockmode("update").one_or_none()
     if not notebook:
         return dbmsg("31")
-    # 如果不是公开的笔记本，则查看是否有写权限
-    if notebook.mode != 2:
-        if not session.query(UserNotebookMode).filter_by(uid=uid, nid=nid, write_auth=1).\
-                one_or_none():
-            return dbmsg("91")
+    # 则查看是否有写权限
+    notebook_mode = session.query(UserNotebookMode).filter_by(uid=uid, nid=nid). \
+        one_or_none()
+    # 如果不是公开笔记本且没有权限（或者是未接收、拒绝状态）
+    if notebook.mode != 2 and (not notebook_mode or notebook_mode.auth != 1):
+        return dbmsg("91")
+    if notebook_mode:
+        notebook_mode.last_op_time = datetime.datetime.now()
     new_content.floor = notebook.content_length + 1
     notebook.content_length += 1
     session.add(new_content)
@@ -953,3 +962,30 @@ def user_cashout(uid, amount, address, tx_hash):
         tx_hash=tx_hash
     )
     session.add(transaction)
+
+
+def get_top_notebooks(start, end):
+    """
+    获取最近的笔记本（按回复时间排序，从start 到 end）
+    :param start:
+    :param end:
+    :return:
+    """
+    session = Session()
+    # Cross Join
+    content_query = session.query(NotebookContent.nid,
+                                  f.max(NotebookContent.time).label("t"), Notebook).\
+        group_by(NotebookContent.nid).\
+        order_by(sql.desc("t")).\
+        filter(Notebook.nid == NotebookContent.nid, Notebook.mode == 2).\
+        offset(start).limit(end - start).all()
+    notebooks_json = [
+        {
+            "id": [nid, notebook.rid],
+            "name": notebook.name,
+            "desc": notebook.desc,
+            "last_reply": last_reply
+        }
+        for nid, last_reply, notebook in content_query
+    ]
+    return notebooks_json

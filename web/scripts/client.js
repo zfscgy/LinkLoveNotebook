@@ -45,6 +45,7 @@ let dbmsgs = {
     "74": "该笔记本是公开笔记本，操作无效",
     // vote_contetn
     "81": "无法找到该id对应的笔记本内容",
+    "a1": "没有足够的积分进行该操作",
     // string length check failed
     "s0": "查询格式错误",
     "s1": "字符串长度超标",
@@ -402,6 +403,29 @@ let client =
                     amount: amount
                 }
             })
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
+    },
+    reward_content(cid, vtype, amount, next) {
+        axios.get(server + "/api/rewardContent",
+            {
+                params: {
+                    cid: cid,
+                    v: vtype,
+                    amount: amount
+                }
+            })
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
+    },
+
+    get_recent_notebooks(start, end, next) {
+        axios.get(server + "/api/recentNotebooks", {
+            params: {
+                start: start,
+                end: end
+            }
+        })
             .then(res => { next.then(res.data) })
             .catch(err => { next.catch(err) })
     }

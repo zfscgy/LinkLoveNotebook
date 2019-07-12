@@ -14,7 +14,17 @@ var notebook = new Vue({
         },
         contents: [],
         content_start: 0,
-        content_end: 20
+        content_end: 20,
+        reward: {
+            floor: 0,
+            cid: null,
+            author: {
+                "avatar": "",
+                "id": [null, null],
+                "name": ""
+            },
+            amount: 0
+        }
     },
     methods: {
         get_notebook() {
@@ -104,23 +114,23 @@ var notebook = new Vue({
                 // 点赞
                 vtype = 1
             }
-            else if(type==1 && content.downvote[1] == 0) {
+            else if (type == 1 && content.downvote[1] == 0) {
                 vtype = 2
             }
-            else{
+            else {
                 vtype = 4
             }
             let that = this
             let next = {
-                then(res){
-                    if(res.msg == "ok" && res.data.dbmsg == "ok") {
-                        if(vtype == 1){
+                then(res) {
+                    if (res.msg == "ok" && res.data.dbmsg == "ok") {
+                        if (vtype == 1) {
                             content.downvote[0] -= content.downvote[1]
                             content.downvote[1] = 0
                             content.upvote[1] = 1
                             content.upvote[0] += 1
                         }
-                        else if(vtype == 2){
+                        else if (vtype == 2) {
                             content.upvote[0] -= content.upvote[1]
                             content.upvote[1] = 0
                             content.downvote[1] = 1
@@ -144,6 +154,44 @@ var notebook = new Vue({
                 }
             }
             client.vote_content(content.cid, vtype, 0, next)
+        },
+        try_reward_content(content) {
+            this.reward.floor = content.floor
+            this.reward.cid = content.cid
+            this.reward.author = content.author
+            $('#reward-modal').modal('show')
+        },
+        select_amount(amount) {
+            this.reward.amount = amount.toString()
+        },
+        reward_content() {
+            let that = this
+            let content = that.contents[that.reward.floor - 1]
+            let next = {
+                then(res) {
+                    if (res.msg == "ok") {
+                        if (res.data.dbmsg == "ok") {
+                            alert("打赏成功！")
+                            $('#reward-modal').modal('hide')
+                            content.reward[0] += Number(that.reward.amount)
+                            content.reward[1] += Number(that.reward.amount)
+                            Vue.set(that.contents, that.reward.floor - 1, content)
+                        }
+                        else {
+                            alert(dbmsgs[res.data.dbmsg])
+                        }
+                    }
+                    else {
+                        alert(smsgs[res.msg])
+                    }
+                },
+                catch(err) {
+                    console.log(err)
+                    alert(err)
+                }
+
+            }
+            client.vote_content(this.reward.cid, 3, Number(this.reward.amount), next)
         }
     }
 })
