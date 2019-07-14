@@ -166,7 +166,7 @@ def notebook():
 
     :return: 笔记本基本信息
     """
-    rid = request.args.get("id")
+    rid = request.args.get("id", type=str)
     if rid is None:
         return json.dumps(smsg("01"))
     notebook_info = d.get_notebook_info(rid)
@@ -186,7 +186,7 @@ def notebook():
 
 @app.route('/api/content', methods=["GET"])
 def content():
-    nid = request.args.get("nid")
+    nid = request.args.get("nid", type=int)
     start = request.args.get("start", type=int)
     end = request.args.get("end", type=int)
 
@@ -256,11 +256,33 @@ def friend():
     res = d.make_friend(uid, uid2, act)
     return json.dumps(smsg(data=res))
 
+@app.route("/api/myFriendApplications", methods=["GET"])
+def my_friend_applications():
+    """
+    GET方法获取用户发送的好友请求
+
+    :return: 好友请求列表
+    """
+    token = request.cookies.get("token")
+    # Cookie中没有Token
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    uid = info['uid']
+    res = d.get_my_friend_applications(uid)
+    return json.dumps(smsg(data=res))
 
 @app.route("/api/friendRequests", methods=["GET"])
 def friend_requests():
     """
-    GET方法获取用户的好友请求
+    GET方法获取用户接收的好友请求
 
     :return: 好友请求列表
     """
@@ -304,6 +326,23 @@ def notebook_requests():
     return json.dumps(smsg(data=res))
 
 
+@app.route("/api/myNotebookProposals", methods=["GET"])
+def my_notebook_requests():
+    token = request.cookies.get("token")
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    uid = info['uid']
+    res = d.get_my_notebook_requests(uid)
+    return json.dumps(smsg(data=res))
+
 @app.route('/api/notebookAuth', methods=["GET"])
 def auth_notebook():
     token = request.cookies.get("token")
@@ -318,8 +357,8 @@ def auth_notebook():
         else:
             return json.dumps(smsg("03"))
     uid = info['uid']
-    nid = request.args.get("nid")
-    act = request.args.get("act")
+    nid = request.args.get("nid", type=int)
+    act = request.args.get("act", type=int)
     res = d.auth_notebook(uid, nid, act)
     return json.dumps(smsg(data=res))
 
@@ -357,8 +396,14 @@ def recent_notebooks():
     start = request.args.get("start", type=int)
     end = request.args.get("end", type=int)
     res = d.get_top_notebooks(start, end)
-    return smsg(data=res)
+    return json.dumps(smsg(data=res))
 
+
+@app.route("/api/userPoints", methods=["GET"])
+def user_points():
+    uid = request.args.get("uid", type=int)
+    res = d.get_user_points(uid)
+    return json.dumps(smsg(data=res))
 '''
 @app.route('/web/<p>', methods=["GET"])
 def web(p):

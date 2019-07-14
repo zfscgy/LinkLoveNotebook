@@ -1,21 +1,15 @@
-let notfis = new Vue({
+let notifs = new Vue({
     el: "#notifications",
     data: {
         account_info: {
-            "avatar":""
+            "avatar": ""
         },
         cur_tab: "my_proposals",
-        my_proposals: [{
-            name: "笔记本1",
-            creator: [{ id: [0, 'zfscgy'], name: "zf", avatar: "res/imgs/img1.jpg" }],
-            desc: "My first notebook proposal",
-            authed: [{ id: [0, 'zfscgy'], name: "zf", avatar: "res/imgs/img1.jpg" }],
-            rejeted: [],
-            unauthed: [{ id: [1, 'cwk'], name: "cwk", avatar: "res/imgs/img1.jpg" }],
-        }],
+        my_proposals: [],
         unauthed_proposals: [],
-        friend_requests: [
-        ],
+        friend_requests: [],
+        my_applications: [],
+        points: 0
     },
     methods: {
         change_tab: function (e) {
@@ -44,6 +38,30 @@ let notfis = new Vue({
                 }
             }
             client.get_friend_requests(next)
+        },
+        get_my_friend_applications() {
+            let that = this
+            let next = {
+                then(res) {
+                    if (res.msg == "ok") {
+                        if (res.data.dbmsg == "ok") {
+                            console.log(res)
+                            that.my_applications = res.data.data
+                        }
+                        else {
+                            alert(dbmsgs[res.data.dbmsg])
+                        }
+                    }
+                    else {
+                        alert(smsgs[res.msg])
+                    }
+                },
+                catch(err) {
+                    console.log(err)
+                    alert(error)
+                }
+            }
+            client.get_friend_applications(next)
         },
         friend_operation: function (uid, act) {
             let that = this
@@ -78,7 +96,27 @@ let notfis = new Vue({
             }
             client.make_friend(uid, act, next)
         },
-        get_unauthed_notebooks: function() {
+        get_my_notebook_proposals() {
+            let that = this
+            let next = {
+                then(res) {
+                    if (res.msg == "ok") {
+                        if (res.data.dbmsg == "ok") {
+                            that.my_proposals = res.data.data
+                        }
+                        else {
+                            alert(dbmsgs[res.data.dbmsg])
+                        }
+                    }
+                },
+                catch(err) {
+                    console.log(err)
+                    alert(err)
+                }
+            }
+            client.get_my_notebook_proposals(next)
+        },
+        get_unauthed_notebooks: function () {
             let that = this
             let next = {
                 then(res) {
@@ -98,7 +136,7 @@ let notfis = new Vue({
             }
             client.get_unauthed_notebooks(next)
         },
-        auth_notebook: function(nid, act) {
+        auth_notebook: function (nid, act) {
             let that = this
             let word = ["接受", "拒绝"]
             let next = {
@@ -116,18 +154,31 @@ let notfis = new Vue({
                 catch(err) {
                     console.log(err)
                     alert(err)
-                }         
+                }
             }
             client.auth_notebook(nid, act, next)
         }
     }
 })
-notfis.get_friend_requests()
-notfis.get_unauthed_notebooks()
+notifs.get_friend_requests()
+notifs.get_my_notebook_proposals()
+notifs.get_unauthed_notebooks()
 client.get_my_account_info({
     then(res) {
-        if(res.msg=="ok" && res.data.dbmsg == "ok") {
-            notfis.account_info = res.data.data
+        if (res.msg == "ok" && res.data.dbmsg == "ok") {
+            notifs.account_info = res.data.data
+            client.get_account_points(
+                notifs.account_info.id[0],
+                {
+                    then(res) {
+                        if (res.msg == "ok" && res.data.dbmsg == "ok") {
+                            notifs.points = res.data.data
+                        }
+                    },
+                    catch(err) {
+                        console.log(err)
+                    }
+                })
         }
     },
     catch(err) {

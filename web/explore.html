@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="node_modules/jquery/dist/jquery.js"></script>
+    <script src="node_modules/popper.js/dist/umd/popper.js"></script>
+    <script src="node_modules/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="node_modules/vue/dist/vue.js"></script>
+    <script src="node_modules/axios/dist/axios.js"></script>
+    <script src="scripts/client.js"></script>
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="css/common.css">
+</head>
+
+<body>
+    <div id="explore">
+        <div class="container">
+            <div id="header">
+                <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+                    <a class="navbar-brand" href="#">链恋笔记本</a>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-list">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbar-list">
+                        <ul class="navbar-nav mr-auto">
+                            <li class="nav-item"><a class="nav-link" href="account.html">个人中心</a></li>
+                            <li class="nav-item active"><a class="nav-link" href="explore.html">发现</a></li>
+                        </ul>
+                        <div>
+                            <a href="notifications.html">
+                                <img v-bind:src="account_info.avatar"
+                                    style="height: 2rem; width: 2rem; border-radius: 0.3rem">
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+            <div class="row">
+                <div class="zf-account-header">
+                    <h3 class="text-muted" style="float: left">最新笔记本</h3>
+                </div>
+            </div>
+            <div class="zf-card-container">
+                <div class="zf-card" v-for="notebook in newest_notebooks">
+                    <div class="row" style="align-items: flex-end">
+                        <div class="text-dark zf-text-block" style="font-size: 19px">
+                            <a v-bind:href="'notebook.html?' + 'id=' + notebook.id[1]">{{notebook.name}}</a>
+                        </div>
+                        <div class="text-center text-info zf-text-block" style="font-size: 15px">
+                            {{notebook.desc}}
+                        </div>
+                        <div style="margin-left: auto">
+                            最后回复:&nbsp;{{notebook.last_reply}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row" style="justify-content: center">
+                <ul class="pagination" style="float: right">
+                    <!--似乎在li里面的a添加 href 就会使得鼠标指在 li 元素-->
+                    <li class="page-item">
+                        <a class="page-link" href="#">前一页</a>
+                    </li>
+                    <li class="page-item" v-for="page in 10" v-bind:class="{'active':cur_page==page - 1}">
+                        <a class="page-link" href="#" v-on:click="set_page(page)">{{page.toString()}}</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">后一页</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/explore.js"></script>
+</body>
+
+</html>

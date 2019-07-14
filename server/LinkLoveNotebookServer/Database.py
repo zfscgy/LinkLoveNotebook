@@ -6,6 +6,8 @@ from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.sql import and_, or_, functions as f
 import sqlalchemy as sql
 from Configs import *
+import traceback
+
 
 base = declarative_base()
 
@@ -198,13 +200,18 @@ import datetime
 
 def login(rid: str, key_md5: str):
     session = Session()
-    user = session.query(User).filter_by(rid=rid).one_or_none()
-    if not user or user.u_key_md5 != key_md5:
-        return dbmsg("00")
-    else:
-        return dbmsg(data={
-            "uid": user.uid
-        })
+    try:
+        user = session.query(User).filter_by(rid=rid).one_or_none()
+        if not user or user.u_key_md5 != key_md5:
+            return dbmsg("00")
+        else:
+            return dbmsg(data={
+                "uid": user.uid
+            })
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 def user_register(rid: str, key_md5:str, name:str, avatar:str, desc:str):
@@ -217,31 +224,36 @@ def user_register(rid: str, key_md5:str, name:str, avatar:str, desc:str):
         return dbmsg("s1")
 
     session = Session()
-    # 检查用户名可用性
-    if session.query(User).filter(User.rid == rid).one_or_none():
-        return dbmsg("11")
-    user = User(
-        rid=rid,
-        u_key_md5=key_md5,
-        reg_time=datetime.datetime.today(),
-        name=name,
-        avatar=avatar,
-        status=0
-    )
-    session.add(user)
-    session.commit()
-    # # 积分操作 # #
-    # 用户积分记录初始化
-    uid = session.query(User).filter_by(rid=rid).one().uid
-    user_points = UserPoints(
-        uid=uid,
-        points=0
-    )
-    session.add(user_points)
-    session.commit()
-    # 发放初始积分
-    transfer_points(uid, -1, -1, PP.initial_points, 0)
-    return dbmsg()
+    try:
+        # 检查用户名可用性
+        if session.query(User).filter(User.rid == rid).one_or_none():
+            return dbmsg("11")
+        user = User(
+            rid=rid,
+            u_key_md5=key_md5,
+            reg_time=datetime.datetime.today(),
+            name=name,
+            avatar=avatar,
+            status=0
+        )
+        session.add(user)
+        session.commit()
+        # # 积分操作 # #
+        # 用户积分记录初始化
+        uid = session.query(User).filter_by(rid=rid).one().uid
+        user_points = UserPoints(
+            uid=uid,
+            points=0
+        )
+        session.add(user_points)
+        session.commit()
+        # 发放初始积分
+        transfer_points(uid, -1, -1, PP.initial_points, 0)
+        return dbmsg()
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:list,
@@ -259,72 +271,77 @@ def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:lis
 
     # 存在同样的笔记本
     session = Session()
-    if session.query(Notebook).filter(Notebook.rid == rid).one_or_none():
-        return dbmsg("61")
+    try:
+        if session.query(Notebook).filter(Notebook.rid == rid).one_or_none():
+            return dbmsg("61")
 
-    # 如果写权限列表为空，则默认是公开笔记本
-    if len(writer_list) == 0:
-        mode = 2
-    # 写权限列表长度为1，则为仅作者可写
-    elif len(writer_list) == 1:
-        mode = 0
-    # 否则是多人可写
-    else:
-        mode = 4
+        # 如果写权限列表为空，则默认是公开笔记本
+        if len(writer_list) == 0:
+            mode = 2
+        # 写权限列表长度为1，则为仅作者可写
+        elif len(writer_list) == 1:
+            mode = 0
+        # 否则是多人可写
+        else:
+            mode = 4
 
-    # 检查写权限用户是否存在
-    writer_uid_list = []
-    for writer_rid in writer_list:
-        writer = session.query(User).filter(User.rid == writer_rid).one_or_none()
-        if not writer:
-            return dbmsg("21", data=writer_rid)
-        writer_uid_list.append(writer.uid)
-    # # 积分操作 # #
-    # 检查是否有足够的积分，如果有，则扣分
-    if get_user_points(creator_id)["data"] < PP.create_notebook_cost:
-        return dbmsg("a1")
+        # 检查写权限用户是否存在
+        writer_uid_list = []
+        for writer_rid in writer_list:
+            writer = session.query(User).filter(User.rid == writer_rid).one_or_none()
+            if not writer:
+                return dbmsg("21", data=writer_rid)
+            writer_uid_list.append(writer.uid)
+        # # 积分操作 # #
+        # 检查是否有足够的积分，如果有，则扣分
+        if get_user_points(creator_id)["data"] < PP.create_notebook_cost:
+            return dbmsg("a1")
 
-    # 写权限列表的第一个人必须是创建者
-    if len(writer_uid_list) > 0 and writer_uid_list[0] != creator_id:
-        return dbmsg("s2")
+        # 写权限列表的第一个人必须是创建者
+        if len(writer_uid_list) > 0 and writer_uid_list[0] != creator_id:
+            return dbmsg("s2")
 
 
-    notebook = Notebook(
-        rid=rid,
-        name=name,
-        creator=creator_id,
-        create_time=datetime.datetime.today(),
-        desc=desc,
-        mode=mode,
-        content_length=0
-    )
+        notebook = Notebook(
+            rid=rid,
+            name=name,
+            creator=creator_id,
+            create_time=datetime.datetime.today(),
+            desc=desc,
+            mode=mode,
+            content_length=0
+        )
 
-    session.add(notebook)
-    notebook = session.query(Notebook).filter_by(rid=rid).one()
-    if mode == 2:
-        creator_auth = 2
-    else:
-        creator_auth = 1
-    session.add(UserNotebookMode(
-        uid=creator_id,
-        nid=notebook.nid,
-        write_auth=creator_auth,
-        show_mode=public,
-        last_op_time=datetime.datetime.today()
-    ))
-    for uid in writer_uid_list[1:]:
+        session.add(notebook)
+        notebook = session.query(Notebook).filter_by(rid=rid).one()
+        if mode == 2:
+            creator_auth = 2
+        else:
+            creator_auth = 1
         session.add(UserNotebookMode(
-            uid=uid,
+            uid=creator_id,
             nid=notebook.nid,
-            write_auth=0,
-            show_mode=0
+            write_auth=creator_auth,
+            show_mode=public,
+            last_op_time=datetime.datetime.today()
         ))
+        for uid in writer_uid_list[1:]:
+            session.add(UserNotebookMode(
+                uid=uid,
+                nid=notebook.nid,
+                write_auth=0,
+                show_mode=0
+            ))
 
-    session.commit()
-    # # 积分操作 ##
-    # 注意创建笔记本减少积分，所以积分是负数
-    transfer_points(creator_id, -1, notebook.nid, -PP.create_notebook_cost, 3)
-    return dbmsg("ok")
+        session.commit()
+        # # 积分操作 ##
+        # 注意创建笔记本减少积分，所以积分是负数
+        transfer_points(creator_id, -1, notebook.nid, -PP.create_notebook_cost, 3)
+        return dbmsg("ok")
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 def auth_notebook(uid:int, nid:int, act:int):
@@ -335,276 +352,348 @@ def auth_notebook(uid:int, nid:int, act:int):
     :return:
     """
     session = Session()
-    user = session.query(User).filter_by(uid=uid).one_or_none()
-    if not user:
-        return dbmsg("21")
-    notebook = session.query(Notebook).filter_by(nid=nid).one_or_none()
-    if not notebook:
-        return dbmsg("31")
-    user_notebook_mode = session.query(UserNotebookMode).\
-        filter_by(nid=nid, uid=uid).one_or_none()
-    if not user_notebook_mode:
-        return dbmsg("71")
-    if user_notebook_mode.write_auth == 1:
-        return dbmsg("72")
-    elif user_notebook_mode.write_auth == 2:
-        return dbmsg("74")
-    elif user_notebook_mode.write_auth == 3:
-        return dbmsg("73")
-    # 由于在UserNotebookMode里面，3表示 拒绝写权限。
-    if act == 2:
-        act = 3
-    user_notebook_mode.write_auth = act
-    user_notebook_mode.last_op_time = datetime.datetime.today()
-    session.commit()
-    return dbmsg("ok")
+    try:
+        user = session.query(User).filter_by(uid=uid).one_or_none()
+        if not user:
+            return dbmsg("21")
+        notebook = session.query(Notebook).filter_by(nid=nid).one_or_none()
+        if not notebook:
+            return dbmsg("31")
+        user_notebook_mode = session.query(UserNotebookMode).\
+            filter_by(nid=nid, uid=uid).one_or_none()
+        if not user_notebook_mode:
+            return dbmsg("71")
+        if user_notebook_mode.write_auth == 1:
+            return dbmsg("72")
+        elif user_notebook_mode.write_auth == 2:
+            return dbmsg("74")
+        elif user_notebook_mode.write_auth == 3:
+            return dbmsg("73")
+        # 由于在UserNotebookMode里面，3表示 拒绝写权限。
+        if act == 2:
+            act = 3
+        user_notebook_mode.write_auth = act
+        user_notebook_mode.last_op_time = datetime.datetime.today()
+        remain_auths = \
+            session.query(UserNotebookMode).filter_by(nid=nid, write_auth=0).one_or_none()
+        if not remain_auths:
+            notebook.mode = 1
+        session.commit()
+        return dbmsg("ok")
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 # 根据 uid 获得简单的账户信息
 def get_simple_account_info(account_id):
     session = Session()
-    if type(account_id) is int:
-        user = session.query(User).filter_by(uid=account_id).one_or_none()
-    elif type(account_id) is str:
-        user = session.query(User).filter_by(rid=account_id).one_or_none()
-    else:
-        return dbmsg("s0")
-    if not user:
-        return dbmsg("21")
-    res = {
-        "id": [user.uid, user.rid],
-        "name": user.name,
-        "avatar": user.avatar
-    }
-    return dbmsg(data=res)
-
+    try:
+        if type(account_id) is int:
+            user = session.query(User).filter_by(uid=account_id).one_or_none()
+        elif type(account_id) is str:
+            user = session.query(User).filter_by(rid=account_id).one_or_none()
+        else:
+            return dbmsg("s0")
+        if not user:
+            return dbmsg("21")
+        res = {
+            "id": [user.uid, user.rid],
+            "name": user.name,
+            "avatar": user.avatar
+        }
+        return dbmsg(data=res)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 # 获得自己的账户信息
 def get_my_account_info(uid:int):
     session = Session()
-    user = session.query(User).filter_by(uid=uid).one_or_none()
-    if not user:
-        return dbmsg("21")
-    public_notebooks = session.query(UserNotebookMode).\
-        filter(UserNotebookMode.uid==uid, or_(UserNotebookMode.write_auth==2)).\
-        .order_by(sql.desc(UserNotebookMode.last_op_time)).all()
-    private_notebooks = session.query(UserNotebookMode). \
-        filter(UserNotebookMode.uid == uid, or_(UserNotebookMode.write_auth==1)). \
-        order_by(sql.desc(UserNotebookMode.last_op_time)).all()
-    public_notebooks_json = []
-    for notebook_mode in public_notebooks:
-        notebook = notebook_mode.notebook
-        writers = session.query(UserNotebookMode).\
-            filter_by(nid=notebook.nid).all()
-        writer_arr = [[{"id": [writer.uid, writer.user.rid],
-                        "user_auth": writer.write_auth,
-                        "name": writer.user.name,
-                        "avatar": writer.user.avatar}]
-                      for writer in writers]
-        public_notebooks_json.append({
-            "id": [notebook.nid, notebook.rid],
-            "name": notebook.name,
-            "creator": notebook.creator,
-            "desc": notebook.desc,
-            "writers": writer_arr,
-            "mode": notebook.mode,
-            "public": notebook_mode.show_mode,
-            "length": notebook.content_length
-        })
-    private_notebooks_json = []
-    for notebook_mode in private_notebooks:
-        notebook = notebook_mode.notebook
-        writers = session.query(UserNotebookMode).\
-            filter_by(nid=notebook.nid).all()
-        writer_arr = [[{"id": [writer.uid, writer.user.rid],
-                        "user_auth": writer.write_auth,
-                        "name": writer.user.name,
-                        "avatar": writer.user.avatar}]
-                      for writer in writers]
-        private_notebooks_json.append({
-            "id": [notebook.nid, notebook.rid],
-            "name": notebook.name,
-            "creator": notebook.creator,
-            "desc": notebook.desc,
-            "writers": writer_arr,
-            "mode": notebook.mode,
-            "public": notebook_mode.show_mode,
-            "length": notebook.content_length
-        })
-    res = {
-        "id": [uid, user.rid],
-        "name": user.name,
-        "avatar": user.avatar,
-        "public_notebooks": public_notebooks_json,
-        "private_notebooks": private_notebooks_json
-    }
-    return dbmsg(data=res)
-
+    try:
+        user = session.query(User).filter_by(uid=uid).one_or_none()
+        if not user:
+            return dbmsg("21")
+        public_notebooks = session.query(UserNotebookMode).\
+            filter(UserNotebookMode.uid == uid, UserNotebookMode.write_auth == 2).\
+            order_by(sql.desc(UserNotebookMode.last_op_time)).all()
+        private_notebooks = session.query(UserNotebookMode). \
+            filter(UserNotebookMode.uid == uid, UserNotebookMode.write_auth == 1). \
+            order_by(sql.desc(UserNotebookMode.last_op_time)).all()
+        public_notebooks_json = []
+        for notebook_mode in public_notebooks:
+            notebook = notebook_mode.notebook
+            writers = session.query(UserNotebookMode).\
+                filter_by(nid=notebook.nid).all()
+            writer_arr = [[{"id": [writer.uid, writer.user.rid],
+                            "user_auth": writer.write_auth,
+                            "name": writer.user.name,
+                            "avatar": writer.user.avatar}]
+                          for writer in writers]
+            public_notebooks_json.append({
+                "id": [notebook.nid, notebook.rid],
+                "name": notebook.name,
+                "creator": notebook.creator,
+                "desc": notebook.desc,
+                "writers": writer_arr,
+                "mode": notebook.mode,
+                "public": notebook_mode.show_mode,
+                "length": notebook.content_length
+            })
+        private_notebooks_json = []
+        for notebook_mode in private_notebooks:
+            notebook = notebook_mode.notebook
+            writers = session.query(UserNotebookMode).\
+                filter_by(nid=notebook.nid).all()
+            writer_arr = [[{"id": [writer.uid, writer.user.rid],
+                            "user_auth": writer.write_auth,
+                            "name": writer.user.name,
+                            "avatar": writer.user.avatar}]
+                          for writer in writers]
+            private_notebooks_json.append({
+                "id": [notebook.nid, notebook.rid],
+                "name": notebook.name,
+                "creator": notebook.creator,
+                "desc": notebook.desc,
+                "writers": writer_arr,
+                "mode": notebook.mode,
+                "public": notebook_mode.show_mode,
+                "length": notebook.content_length
+            })
+        res = {
+            "id": [uid, user.rid],
+            "name": user.name,
+            "avatar": user.avatar,
+            "public_notebooks": public_notebooks_json,
+            "private_notebooks": private_notebooks_json
+        }
+        return dbmsg(data=res)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 '''
     rid 可以是 int 也可以是 str 
 '''
 def get_account_info(account_id):
     session = Session()
-    if type(account_id) == str:
-        user = session.query(User).filter_by(rid=account_id).one_or_none()
-    elif type(account_id) == int:
-        user = session.query(User).filter_by(uid=account_id).one_or_none()
-    else:
-        return dbmsg("s0")
-    if not user:
-        return dbmsg("21")
-    open_notebook_modes = session.query(UserNotebookMode).\
-        filter(UserNotebookMode.uid == user.uid,
-               UserNotebookMode.show_mode == 1,
-               or_(UserNotebookMode.write_auth == 1, UserNotebookMode.write_auth == 2))
-    open_notebooks = [mode.notebook for mode in open_notebook_modes]
-    notebooks_json = []
-    # 返回该账户公开在主页上的笔记本
-    for open_notebook in open_notebooks:
-        # 该笔记本的写权限仍然在接受中
-        if open_notebook.mode == 4:
-            continue
-        writers = [{"user_id": [ writer.uid, writer.user.rid ],
-                    "name": writer.user.name,
-                    "avatar": writer.user.avatar }
-                   for writer in open_notebook.preferred_writers]
-        notebooks_json.append({
-            "notebook_id": [open_notebook.nid, open_notebook.rid],
-            "notebook_name": open_notebook.name,
-            "notebook_desc": open_notebook.desc,
-            "notebook_writers":writers
-        })
-    res = {
-        "user_id": [user.uid, user.rid],
-        "name": user.name,
-        "avatar": user.avatar,
-        "open_notebooks": notebooks_json
-    }
-    return dbmsg(data=res)
-
+    try:
+        if type(account_id) == str:
+            user = session.query(User).filter_by(rid=account_id).one_or_none()
+        elif type(account_id) == int:
+            user = session.query(User).filter_by(uid=account_id).one_or_none()
+        else:
+            return dbmsg("s0")
+        if not user:
+            return dbmsg("21")
+        open_notebook_modes = session.query(UserNotebookMode).\
+            filter(UserNotebookMode.uid == user.uid,
+                   UserNotebookMode.show_mode == 1,
+                   or_(UserNotebookMode.write_auth == 1, UserNotebookMode.write_auth == 2))
+        open_notebooks = [mode.notebook for mode in open_notebook_modes]
+        notebooks_json = []
+        # 返回该账户公开在主页上的笔记本
+        for open_notebook in open_notebooks:
+            # 该笔记本的写权限仍然在接受中
+            if open_notebook.mode == 4:
+                continue
+            writers = [{"user_id": [ writer.uid, writer.user.rid ],
+                        "name": writer.user.name,
+                        "avatar": writer.user.avatar }
+                       for writer in open_notebook.preferred_writers]
+            notebooks_json.append({
+                "notebook_id": [open_notebook.nid, open_notebook.rid],
+                "notebook_name": open_notebook.name,
+                "notebook_desc": open_notebook.desc,
+                "notebook_writers":writers
+            })
+        res = {
+            "user_id": [user.uid, user.rid],
+            "name": user.name,
+            "avatar": user.avatar,
+            "open_notebooks": notebooks_json
+        }
+        return dbmsg(data=res)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 def get_my_unauthed_notebooks(uid:int):
     session = Session()
-    notebooks = session.query(UserNotebookMode).\
-        filter(UserNotebookMode.uid == uid, UserNotebookMode.write_auth == 0).all()
-    notebooks_json = []
-    for notebook_mode in notebooks:
-        notebook = notebook_mode.notebook
-        writers = session.query(UserNotebookMode).\
-            filter_by(nid=notebook.nid).all()
-        writer_arr = [{"id": [writer.uid,writer.user.rid],
-                        "write_auth": writer.write_auth,
-                        "name": writer.user.name,
-                        "avatar": writer.user.avatar}
-                      for writer in writers]
-        authed_writers = [writer for writer in writer_arr if writer["write_auth"] == 1]
-        unauthed_writers = [writer for writer in writer_arr if writer["write_auth"] == 0]
-        rejected_writers = [writer for writer in writer_arr if writer["write_auth"] == 3]
-        notebooks_json.append({
-            "id": [notebook.nid, notebook.rid],
-            "name": notebook.name,
-            "creator": {
-                "id": [notebook.author.uid, notebook.author.rid],
-                "name": notebook.author.name,
-                "avatar": notebook.author.avatar
-            },
-            "authed_writers": authed_writers,
-            "unauthed_writers": unauthed_writers,
-            "rejected_writers": rejected_writers,
-            "mode": notebook.mode,
-            "public": notebook_mode.show_mode
-        })
-    return dbmsg(data=notebooks_json)
+    try:
+        notebooks = session.query(UserNotebookMode).\
+            filter(UserNotebookMode.uid == uid, UserNotebookMode.write_auth == 0).all()
+        notebooks_json = []
+        for notebook_mode in notebooks:
+            notebook = notebook_mode.notebook
+            writers = session.query(UserNotebookMode).\
+                filter_by(nid=notebook.nid).all()
+            writer_arr = [{"id": [writer.uid,writer.user.rid],
+                            "write_auth": writer.write_auth,
+                            "name": writer.user.name,
+                            "avatar": writer.user.avatar}
+                          for writer in writers]
+            authed_writers = [writer for writer in writer_arr if writer["write_auth"] == 1]
+            unauthed_writers = [writer for writer in writer_arr if writer["write_auth"] == 0]
+            rejected_writers = [writer for writer in writer_arr if writer["write_auth"] == 3]
+            notebooks_json.append({
+                "id": [notebook.nid, notebook.rid],
+                "name": notebook.name,
+                "creator": {
+                    "id": [notebook.author.uid, notebook.author.rid],
+                    "name": notebook.author.name,
+                    "avatar": notebook.author.avatar
+                },
+                "authed_writers": authed_writers,
+                "unauthed_writers": unauthed_writers,
+                "rejected_writers": rejected_writers,
+                "mode": notebook.mode,
+                "public": notebook_mode.show_mode
+            })
+        return dbmsg(data=notebooks_json)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
+
+def get_my_notebook_requests(uid:int):
+    session = Session()
+    try:
+        notebooks = session.query(Notebook).\
+            filter(Notebook.creator == uid, Notebook.mode == 4).all()
+        notebooks_json = []
+        for notebook in notebooks:
+            writers = session.query(UserNotebookMode).\
+                filter_by(nid=notebook.nid).all()
+            writer_arr = [{"id": [writer.uid,writer.user.rid],
+                            "write_auth": writer.write_auth,
+                            "name": writer.user.name,
+                            "avatar": writer.user.avatar}
+                          for writer in writers]
+            authed_writers = [writer for writer in writer_arr if writer["write_auth"] == 1]
+            unauthed_writers = [writer for writer in writer_arr if writer["write_auth"] == 0]
+            rejected_writers = [writer for writer in writer_arr if writer["write_auth"] == 3]
+            notebooks_json.append({
+                "id": [notebook.nid, notebook.rid],
+                "name": notebook.name,
+                "creator": {
+                    "id": [notebook.author.uid, notebook.author.rid],
+                    "name": notebook.author.name,
+                    "avatar": notebook.author.avatar
+                },
+                "authed_writers": authed_writers,
+                "unauthed_writers": unauthed_writers,
+                "rejected_writers": rejected_writers,
+                "mode": notebook.mode,
+                "public": writers[0].show_mode
+            })
+        return dbmsg(data=notebooks_json)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 # 第三方查看笔记本信息
 def get_notebook_info(rid):
     session = Session()
-    if type(rid) is int:
-        notebook = session.query(Notebook).filter(Notebook.nid == rid).\
-            one_or_none()
-    elif type(rid) is str:
-        notebook = session.query(Notebook).filter(Notebook.rid == rid).\
-            one_or_none()
-    else:
-        return dbmsg("s0")
-    if not notebook:
-        return dbmsg("31")
-    nid = notebook.nid
-    # 此时只查看得到已经同意写该笔记本的用户作为笔记本作者
-    writers = session.query(UserNotebookMode).filter_by(nid=nid, write_auth=1).all()
-    writers = [writer.user for writer in writers]
-    writers_json = [{
-        "user_id": [writer.uid, writer.rid],
-        "name": writer.name,
-        "avatar": writer.avatar
-    } for writer in writers]
-    res = {
-        "id": [notebook.nid, notebook.rid],
-        "name": notebook.name,
-        "desc": notebook.desc,
-        "writers": writers_json,
-        "length": notebook.content_length
-    }
-    return dbmsg(data=res)
+    try:
+        if type(rid) is int:
+            notebook = session.query(Notebook).filter(Notebook.nid == rid).\
+                one_or_none()
+        elif type(rid) is str:
+            notebook = session.query(Notebook).filter(Notebook.rid == rid).\
+                one_or_none()
+        else:
+            return dbmsg("s0")
+        if not notebook:
+            return dbmsg("31")
+        nid = notebook.nid
+        # 此时只查看得到已经同意写该笔记本的用户作为笔记本作者
+        writers = session.query(UserNotebookMode).filter_by(nid=nid, write_auth=1).all()
+        writers = [writer.user for writer in writers]
+        writers_json = [{
+            "user_id": [writer.uid, writer.rid],
+            "name": writer.name,
+            "avatar": writer.avatar
+        } for writer in writers]
+        res = {
+            "id": [notebook.nid, notebook.rid],
+            "name": notebook.name,
+            "desc": notebook.desc,
+            "writers": writers_json,
+            "length": notebook.content_length
+        }
+        return dbmsg(data=res)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 def get_notebook_contents(nid:int, start:int, end:int, uid=None):
     session = Session()
-    notebook = session.query(Notebook).filter_by(nid=nid)
-    if not notebook:
-        return dbmsg("31")
-    contents = session.query(NotebookContent).filter_by(nid=nid).\
-        order_by(NotebookContent.cid)[start:end]
-    res = []
-    for content in contents:
-        content_info = {
-            "cid": content.cid,
-            "uid": content.uid,
-            "time": str(content.time),
-            "content": content.content,
-            "imgs": content.imgs,
-            "floor": content.floor,
-            "ref":content.ref,
-            "author": {
-                "id": [content.author.uid, content.author.rid],
-                "name": content.author.name,
-                "avatar": content.author.avatar
+    try:
+        notebook = session.query(Notebook).filter_by(nid=nid)
+        if not notebook:
+            return dbmsg("31")
+        contents = session.query(NotebookContent).filter_by(nid=nid).\
+            order_by(NotebookContent.cid)[start:end]
+        res = []
+        for content in contents:
+            content_info = {
+                "cid": content.cid,
+                "uid": content.uid,
+                "time": str(content.time),
+                "content": content.content,
+                "imgs": content.imgs,
+                "floor": content.floor,
+                "ref":content.ref,
+                "author": {
+                    "id": [content.author.uid, content.author.rid],
+                    "name": content.author.name,
+                    "avatar": content.author.avatar
+                }
             }
-        }
-        upvote_count = session.query(VoteHistory).\
-            filter_by(cid = content.cid, vote_type=0).count()
-        downvote_count = session.query(VoteHistory).\
-            filter_by(cid=content.cid, vote_type=1).count()
-        reward_sum = session.query(f.sum(VoteHistory.amount)).\
-            filter_by(cid=content.cid, vote_type=2).scalar()
-        # scalar() 返回的是 Decimal，需要转换成int才可以转JSON
-        if reward_sum is None:
-            reward_sum = 0
-        else:
-            reward_sum = int(reward_sum)
-        if uid:
-            my_upvote = session.query(VoteHistory).\
-                filter_by(cid = content.cid, uid=uid, vote_type=0).count()
-            my_downvote = session.query(VoteHistory).\
-                filter_by(cid=content.cid, vote_type=1, uid=uid).count()
-            my_reward = session.query(f.sum(VoteHistory.amount)).\
-                filter_by(cid=content.cid, uid=uid, vote_type=2).scalar()
-            if my_reward is None:
-                my_reward = 0
+            upvote_count = session.query(VoteHistory).\
+                filter_by(cid = content.cid, vote_type=0).count()
+            downvote_count = session.query(VoteHistory).\
+                filter_by(cid=content.cid, vote_type=1).count()
+            reward_sum = session.query(f.sum(VoteHistory.amount)).\
+                filter_by(cid=content.cid, vote_type=2).scalar()
+            # scalar() 返回的是 Decimal，需要转换成int才可以转JSON
+            if reward_sum is None:
+                reward_sum = 0
             else:
-                my_reward = int(my_reward)
-        else:
-            my_upvote = 0
-            my_downvote = 0
-            my_reward = 0
-        content_info["upvote"] = [upvote_count, my_upvote]
-        content_info["downvote"] = [downvote_count, my_downvote]
-        content_info["reward"] = [reward_sum, my_reward]
-        res.append(content_info)
-    return dbmsg(data=res)
-
+                reward_sum = int(reward_sum)
+            if uid:
+                my_upvote = session.query(VoteHistory).\
+                    filter_by(cid = content.cid, uid=uid, vote_type=0).count()
+                my_downvote = session.query(VoteHistory).\
+                    filter_by(cid=content.cid, vote_type=1, uid=uid).count()
+                my_reward = session.query(f.sum(VoteHistory.amount)).\
+                    filter_by(cid=content.cid, uid=uid, vote_type=2).scalar()
+                if my_reward is None:
+                    my_reward = 0
+                else:
+                    my_reward = int(my_reward)
+            else:
+                my_upvote = 0
+                my_downvote = 0
+                my_reward = 0
+            content_info["upvote"] = [upvote_count, my_upvote]
+            content_info["downvote"] = [downvote_count, my_downvote]
+            content_info["reward"] = [reward_sum, my_reward]
+            res.append(content_info)
+        return dbmsg(data=res)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 def write_notebook_content(uid:int, nid:int, content:str, imgs:str="", ref:int=0):
     new_content = NotebookContent(uid=uid, nid=nid,
@@ -612,46 +701,50 @@ def write_notebook_content(uid:int, nid:int, content:str, imgs:str="", ref:int=0
                                   content=content, imgs=imgs,
                                   ref=ref)
 
-
     # 检查格式
     if len(imgs) > 320:
         return dbmsg("s1")
 
     session = Session()
-    # # 积分操作 ##
-    # 检查积分是否足够
-    if get_user_points(uid)['data'] < PP.reply_notebook_cost:
-        return dbmsg("a1")
+    try:
+        # # 积分操作 ##
+        # 检查积分是否足够
+        if get_user_points(uid)['data'] < PP.reply_notebook_cost:
+            return dbmsg("a1")
 
-    # 检查回复的楼层是否存在
-    if ref != 0:
-        ref_content = session.query(NotebookContent).filter_by(nid=nid, floor=ref).\
+        # 检查回复的楼层是否存在
+        if ref != 0:
+            ref_content = session.query(NotebookContent).filter_by(nid=nid, floor=ref).\
+                one_or_none()
+            if not ref_content:
+                return dbmsg("92")
+        # 把 notebook表对应的 notebook记录锁住，防止两个事务同时发生出现错误
+        notebook = session.query(Notebook).\
+            filter_by(nid=nid).with_lockmode("update").one_or_none()
+        if not notebook:
+            return dbmsg("31")
+        # 则查看是否有写权限
+        notebook_mode = session.query(UserNotebookMode).filter_by(uid=uid, nid=nid). \
             one_or_none()
-        if not ref_content:
-            return dbmsg("92")
-    # 把 notebook表对应的 notebook记录锁住，防止两个事务同时发生出现错误
-    notebook = session.query(Notebook).\
-        filter_by(nid=nid).with_lockmode("update").one_or_none()
-    if not notebook:
-        return dbmsg("31")
-    # 则查看是否有写权限
-    notebook_mode = session.query(UserNotebookMode).filter_by(uid=uid, nid=nid). \
-        one_or_none()
-    # 如果不是公开笔记本且没有权限（或者是未接收、拒绝状态）
-    if notebook.mode != 2 and (not notebook_mode or notebook_mode.auth != 1):
-        return dbmsg("91")
-    if notebook_mode:
-        notebook_mode.last_op_time = datetime.datetime.now()
-    new_content.floor = notebook.content_length + 1
-    notebook.content_length += 1
-    session.add(new_content)
-    session.commit()
-    new_content = session.query(NotebookContent).filter_by(
-        uid=uid, nid=nid, floor=new_content.floor
-    ).one()
-    # 扣除积分
-    transfer_points(uid, -1, new_content.cid, - PP.reply_notebook_cost, 4)
-    return dbmsg("ok")
+        # 如果不是公开笔记本且没有权限（或者是未接收、拒绝状态）
+        if notebook.mode != 2 and (not notebook_mode or notebook_mode.write_auth != 1):
+            return dbmsg("91")
+        if notebook_mode:
+            notebook_mode.last_op_time = datetime.datetime.now()
+        new_content.floor = notebook.content_length + 1
+        notebook.content_length += 1
+        session.add(new_content)
+        session.commit()
+        new_content = session.query(NotebookContent).filter_by(
+            uid=uid, nid=nid, floor=new_content.floor
+        ).one()
+        # 扣除积分
+        transfer_points(uid, -1, new_content.cid, - PP.reply_notebook_cost, 4)
+        return dbmsg("ok")
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 # 添加好友
@@ -663,160 +756,180 @@ def make_friend(uid1: int, uid2: int, act:int):
     if uid1 == uid2:
         return dbmsg("52")
     session = Session()
-    user_1 = session.query(User).filter_by(uid=uid1).one_or_none()
-    user_2 = session.query(User).filter_by(uid=uid2).one_or_none()
-    if not user_1 or not user_2:
-        return dbmsg("21")
-    order = uid1 < uid2
-    if order:
-        friends = session.query(Friends). \
-            filter_by(uid1=uid1, uid2=uid2).one_or_none()
-    else:
-        friends = session.query(Friends). \
-            filter_by(uid1=uid2, uid2=uid1).one_or_none()
-    if act == 1:  # uid1 向 uid2 发出申请
+    try:
+        user_1 = session.query(User).filter_by(uid=uid1).one_or_none()
+        user_2 = session.query(User).filter_by(uid=uid2).one_or_none()
+        if not user_1 or not user_2:
+            return dbmsg("21")
+        order = uid1 < uid2
         if order:
-            # uid1 已经向 uid2 发出了好友申请
-            if friends and friends.status == 1:
-                return dbmsg("54")
-            # uid2 已经向 uid1 发出了好友申请
-            if friends and friends.status == 2:
-                return dbmsg("55")
-            # uid1 和 uid2 已经是好友关系
-            if friends and friends.status == 0:
-                return dbmsg("56")
-            new_friends = Friends(uid1=uid1, uid2=uid2, status=1)
+            friends = session.query(Friends). \
+                filter_by(uid1=uid1, uid2=uid2).one_or_none()
+        else:
+            friends = session.query(Friends). \
+                filter_by(uid1=uid2, uid2=uid1).one_or_none()
+        if act == 1:  # uid1 向 uid2 发出申请
+            if order:
+                # uid1 已经向 uid2 发出了好友申请
+                if friends and friends.status == 1:
+                    return dbmsg("54")
+                # uid2 已经向 uid1 发出了好友申请
+                if friends and friends.status == 2:
+                    return dbmsg("55")
+                # uid1 和 uid2 已经是好友关系
+                if friends and friends.status == 0:
+                    return dbmsg("56")
+                new_friends = Friends(uid1=uid1, uid2=uid2, status=1)
+                session.add(new_friends)
+            else:
+                # uid1 已经向 uid2 发出了好友申请
+                if friends and friends.status == 2:
+                    return dbmsg("54")
+                # uid2 已经向 uid1 发出了好友申请
+                if friends and friends.status == 1:
+                    return dbmsg("55")
+                # uid1 和 uid2 已经是好友关系
+                if friends and friends.status == 0:
+                    return dbmsg("56")
+                new_friends = Friends(uid1=uid2, uid2=uid1, status=2)
+                session.add(new_friends)
             session.add(new_friends)
-        else:
-            # uid1 已经向 uid2 发出了好友申请
-            if friends and friends.status == 2:
-                return dbmsg("54")
-            # uid2 已经向 uid1 发出了好友申请
-            if friends and friends.status == 1:
-                return dbmsg("55")
-            # uid1 和 uid2 已经是好友关系
-            if friends and friends.status == 0:
-                return dbmsg("56")
-            new_friends = Friends(uid1=uid2, uid2=uid1, status=2)
-            session.add(new_friends)
-        session.add(new_friends)
 
-    # uid1 同意 uid2 的申请
-    elif act == 2:
-        if not friends:
-            return dbmsg("53")
-        if order:
-            if friends.status != 2:
+        # uid1 同意 uid2 的申请
+        elif act == 2:
+            if not friends:
                 return dbmsg("53")
-            friends.status = 0
-        else:
-            if friends.status != 1:
-                return dbmsg("53")
-            friends.status = 0
+            if order:
+                if friends.status != 2:
+                    return dbmsg("53")
+                friends.status = 0
+            else:
+                if friends.status != 1:
+                    return dbmsg("53")
+                friends.status = 0
 
-    # uid1 拒绝 uid2 的申请
-    elif act == 2:
-        if not friends:
-            return dbmsg("53")
-        if order:
-            if friends.status != 2:
+        # uid1 拒绝 uid2 的申请
+        elif act == 2:
+            if not friends:
                 return dbmsg("53")
-            friends.status = 0
+            if order:
+                if friends.status != 2:
+                    return dbmsg("53")
+                friends.status = 0
+            else:
+                if friends.status != 1:
+                    return dbmsg("53")
+                friends.status = 0
+        elif act == 3:
+            if not friends:
+                return dbmsg("57")
+            session.delete(friends)
         else:
-            if friends.status != 1:
-                return dbmsg("53")
-            friends.status = 0
-    elif act == 3:
-        if not friends:
-            return dbmsg("57")
-        session.delete(friends)
-    else:
-        return dbmsg("s0")
-    session.commit()
-    return dbmsg()
+            return dbmsg("s0")
+        session.commit()
+        return dbmsg()
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 def get_friend_list(uid:int):
     session = Session()
-    friends = session.query(Friends).filter_by(uid1=uid, status=0).union(
-        session.query(Friends).filter_by(uid2=uid, status=0)
-    ).all()
-    friend_list = []
-    for friend in friends:
-        if friend.uid1 == uid:
-            friend_info = session.query(User).filter_by(uid=friend.uid2).one()
-        else:
-            friend_info = session.query(User).filter_by(uid=friend.uid1).one()
+    try:
+        friends = session.query(Friends).filter_by(uid1=uid, status=0).union(
+            session.query(Friends).filter_by(uid2=uid, status=0)
+        ).all()
+        friend_list = []
+        for friend in friends:
+            if friend.uid1 == uid:
+                friend_info = session.query(User).filter_by(uid=friend.uid2).one()
+            else:
+                friend_info = session.query(User).filter_by(uid=friend.uid1).one()
 
-        if friend_info:
-            friend_list.append({
-                "id": [friend_info.uid, friend_info.rid],
-                "name": friend_info.name,
-                "avatar": friend_info.avatar
-            })
-        else:
-            friend_list.append({
-                "id": [-1, "null"],
-                "name": "[已删除]",
-                "avatar": "lost.png"
-            })
-
-    return dbmsg(data=friend_list)
+            if friend_info:
+                friend_list.append({
+                    "id": [friend_info.uid, friend_info.rid],
+                    "name": friend_info.name,
+                    "avatar": friend_info.avatar
+                })
+            else:
+                friend_list.append({
+                    "id": [-1, "null"],
+                    "name": "[已删除]",
+                    "avatar": "lost.png"
+                })
+        return dbmsg(data=friend_list)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 def get_my_friend_requests(uid:int):
     session = Session()
-    friends = session.query(Friends).filter_by(uid1=uid, status=2).union(
-        session.query(Friends).filter_by(uid2=uid, status=1)
-    )
-    friend_list = []
-    for friend in friends:
-        if friend.uid1 == uid:
-            friend_info = session.query(User).filter_by(uid=friend.uid2).one()
-        else:
-            friend_info = session.query(User).filter_by(uid=friend.uid1).one()
+    try:
+        friends = session.query(Friends).filter_by(uid1=uid, status=2).union(
+            session.query(Friends).filter_by(uid2=uid, status=1)
+        )
+        friend_list = []
+        for friend in friends:
+            if friend.uid1 == uid:
+                friend_info = session.query(User).filter_by(uid=friend.uid2).one()
+            else:
+                friend_info = session.query(User).filter_by(uid=friend.uid1).one()
 
-        if friend_info:
-            friend_list.append({
-                "id": [friend_info.uid, friend_info.rid],
-                "name": friend_info.name,
-                "avatar": friend_info.avatar
-            })
-        else:
-            friend_list.append({
-                "id": [-1, "null"],
-                "name": "[已删除]",
-                "avatar": "lost.png"
-            })
-    return dbmsg(data=friend_list)
+            if friend_info:
+                friend_list.append({
+                    "id": [friend_info.uid, friend_info.rid],
+                    "name": friend_info.name,
+                    "avatar": friend_info.avatar
+                })
+            else:
+                friend_list.append({
+                    "id": [-1, "null"],
+                    "name": "[已删除]",
+                    "avatar": "lost.png"
+                })
+        return dbmsg(data=friend_list)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 def get_my_friend_applications(uid:int):
     session = Session()
-    user = session.query(User).filter_by(uid=uid).one_or_none
-    if not user:
-        return dbmsg("21")
-    friends = session.query(Friends).filter_by(uid1=uid, status=1).union(
-        session.query(Friends).filter_by(uid2=uid, status=2)
-    )
-    friend_list = []
-    for friend in friends:
-        if friend.uid1 == uid:
-            friend_info = session.query(User).filter_by(uid=friend.uid2).one()
-        else:
-            friend_info = session.query(User).filter_by(uid=friend.uid1).one()
-        if friend_info:
-            friend_list.append({
-                "rid": [friend_info.uid, friend_info.rid],
-                "name": friend_info.name,
-                "avatar": friend_info.avatar
-            })
-        else:
-            friend_list.append({
-                "rid": [-1, "null"],
-                "name": "[已删除]",
-                "avatar": "lost.png"
-            })
-    return dbmsg(data=friend_list)
+    try:
+        user = session.query(User).filter_by(uid=uid).one_or_none
+        if not user:
+            return dbmsg("21")
+        friends = session.query(Friends).filter_by(uid1=uid, status=1).union(
+            session.query(Friends).filter_by(uid2=uid, status=2)
+        )
+        friend_list = []
+        for friend in friends:
+            if friend.uid1 == uid:
+                friend_info = session.query(User).filter_by(uid=friend.uid2).one()
+            else:
+                friend_info = session.query(User).filter_by(uid=friend.uid1).one()
+            if friend_info:
+                friend_list.append({
+                    "rid": [friend_info.uid, friend_info.rid],
+                    "name": friend_info.name,
+                    "avatar": friend_info.avatar
+                })
+            else:
+                friend_list.append({
+                    "rid": [-1, "null"],
+                    "name": "[已删除]",
+                    "avatar": "lost.png"
+                })
+        session.close()
+        return dbmsg(data=friend_list)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 # mode = 1: upvote
 # mode = 2: downvote
@@ -824,66 +937,80 @@ def get_my_friend_applications(uid:int):
 # mode = 4: cancel vote
 def vote_content(cid:int, uid:int, vtype:int, amount:int=0):
     session = Session()
-    content = session.query(NotebookContent).filter_by(cid=cid).one_or_none()
-    nid = content.nid
-    if not content:
-        return dbmsg("81")
-    user = session.query(User).filter_by(uid=uid).one_or_none()
-    if not user:
-        return dbmsg("21")
-    vote = session.query(VoteHistory).\
-        filter(VoteHistory.nid == nid,
-               VoteHistory.cid == cid, VoteHistory.uid == uid,
-               or_(VoteHistory.vote_type == 0, VoteHistory.vote_type == 1)).\
-        one_or_none()
-    reward = session.query(VoteHistory).\
-        filter(VoteHistory.nid == nid,
-               VoteHistory.cid == cid, VoteHistory.uid == uid,
-               VoteHistory.vote_type == 2).\
-        one_or_none()
-    if vtype == 1 or vtype == 2:
-        if vtype == 1:
-            # 被点赞者受到了奖赏
-            transfer_points(content.uid, uid, content.cid, PP.upvote_reward, 1)
-        if vote is None:
-            new_vote = VoteHistory(cid=cid, nid=nid, uid=uid, vote_type=vtype - 1, amount=0,
-                               time=datetime.datetime.today())
-            session.add(new_vote)
-        else:
-            vote.vote_type = vtype - 1
-    elif vtype == 3:
-        # 如果要奖赏某个用户，先要看看是否足够
-        if get_user_points(uid)['data'] < amount:
-            return dbmsg("a1")
-        if reward is None:
-            new_reward = VoteHistory(cid=cid, nid=nid, uid=uid, vote_type=2, amount=amount,
-                                     time=datetime.datetime.today())
-            session.add(new_reward)
-        else:
-            reward.amount += amount
-        # 产生一笔被奖赏的积分转移
-        transfer_points(content.uid, uid, content.cid, amount, 2)
+    try:
+        content = session.query(NotebookContent).filter_by(cid=cid).one_or_none()
+        nid = content.nid
+        if not content:
+            session.close()
+            return dbmsg("81")
+        user = session.query(User).filter_by(uid=uid).one_or_none()
+        if not user:
+            session.close()
+            return dbmsg("21")
+        vote = session.query(VoteHistory).\
+            filter(VoteHistory.nid == nid,
+                   VoteHistory.cid == cid, VoteHistory.uid == uid,
+                   or_(VoteHistory.vote_type == 0, VoteHistory.vote_type == 1)).\
+            one_or_none()
+        reward = session.query(VoteHistory).\
+            filter(VoteHistory.nid == nid,
+                   VoteHistory.cid == cid, VoteHistory.uid == uid,
+                   VoteHistory.vote_type == 2).\
+            one_or_none()
+        if vtype == 1 or vtype == 2:
+            if vtype == 1:
+                # 被点赞者受到了奖赏
+                transfer_points(content.uid, uid, content.cid, PP.upvote_reward, 1)
+            if vote is None:
+                new_vote = VoteHistory(cid=cid, nid=nid, uid=uid, vote_type=vtype - 1, amount=0,
+                                   time=datetime.datetime.today())
+                session.add(new_vote)
+            else:
+                vote.vote_type = vtype - 1
+        elif vtype == 3:
+            # 如果要奖赏某个用户，先要看看是否足够
+            if get_user_points(uid)['data'] < amount:
+                session.close()
+                return dbmsg("a1")
+            if reward is None:
+                new_reward = VoteHistory(cid=cid, nid=nid, uid=uid, vote_type=2, amount=amount,
+                                         time=datetime.datetime.today())
+                session.add(new_reward)
+            else:
+                reward.amount += amount
+            # 产生一笔被奖赏的积分转移
+            transfer_points(content.uid, uid, content.cid, amount, 2)
 
-    elif vtype == 4:
-        if vote is None:
-            pass
+        elif vtype == 4:
+            if vote is None:
+                traceback.print_exc()
+            else:
+                # 不删除记录，只是把vtype设置为3
+                vote.vote_type = 3
+                # 尝试撤回被点赞者的积分
+                # 如果此时正好被点赞者已经把积分用掉了，那么也没办法啦！
+                transfer_points(content.uid, uid, content.cid, -PP.upvote_reward, 7)
         else:
-            # 不删除记录，只是把vtype设置为3
-            vote.vote_type = 3
-            # 尝试撤回被点赞者的积分
-            # 如果此时正好被点赞者已经把积分用掉了，那么也没办法啦！
-            transfer_points(content.uid, uid, content.cid, -PP.upvote_reward, 7)
-    else:
-        return dbmsg("s0")
-    session.commit()
-    return dbmsg("ok")
+            session.close()
+            return dbmsg("s0")
+        session.commit()
+        return dbmsg("ok")
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 def get_user_points(uid):
     session = Session()
-    user_points = session.query(UserPoints).filter_by(uid=uid).one_or_none()
-    if not user_points:
-        return dbmsg("21")
-    return dbmsg(data=user_points.points)
+    try:
+        user_points = session.query(UserPoints).filter_by(uid=uid).one_or_none()
+        if not user_points:
+            return dbmsg("21")
+        return dbmsg(data=user_points.points)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 def transfer_points(uid1, uid2, reward_id, amount, transfer_type):
     """
@@ -908,41 +1035,47 @@ def transfer_points(uid1, uid2, reward_id, amount, transfer_type):
              2 交易格式错误
     """
     session = Session()
-    if transfer_type in [0, 1, 3, 4, 6, 7]:
-        # 用户和系统之间的收支
-        u1_point = session.query(UserPoints).filter_by(uid=uid1).one()
-        record = UserPointRecord(
-            uid=uid1,
-            num=amount,
-            reward_type=transfer_type,
-            reward_id=reward_id,
-            giver_id=uid2
-        )
-        session.add(record)
-        if u1_point.points + amount < 0:
-            return 1
-        u1_point.points += amount
-        session.commit()
-        return 0
-    else:
-        if not transfer_type == 2:
-            return 2
-        u1_point = session.query(UserPoints).filter_by(uid=uid1).one()
-        u2_point = session.query(UserPoints).filter_by(uid=uid2).one()
-        if u2_point.points - amount < 0:
-            return 1
-        u1_point.points += amount
-        u2_point.points -= amount
-        record = UserPointRecord(
-            uid=uid1,
-            num=amount,
-            reward_type=transfer_type,
-            reward_id=reward_id,
-            giver_id=uid2
-        )
-        session.add(record)
-        session.commit()
-        return 0
+    try:
+        if transfer_type in [0, 1, 3, 4, 6, 7]:
+            # 用户和系统之间的收支
+            u1_point = session.query(UserPoints).filter_by(uid=uid1).one()
+            record = UserPointRecord(
+                uid=uid1,
+                num=amount,
+                reward_type=transfer_type,
+                reward_id=reward_id,
+                giver_id=uid2
+            )
+            session.add(record)
+            if u1_point.points + amount < 0:
+                return 1
+            u1_point.points += amount
+            session.commit()
+            return 0
+        else:
+            if not transfer_type == 2:
+                return 2
+            u1_point = session.query(UserPoints).filter_by(uid=uid1).one()
+            u2_point = session.query(UserPoints).filter_by(uid=uid2).one()
+            if u2_point.points - amount < 0:
+                session.close()
+                return 1
+            u1_point.points += amount
+            u2_point.points -= amount
+            record = UserPointRecord(
+                uid=uid1,
+                num=amount,
+                reward_type=transfer_type,
+                reward_id=reward_id,
+                giver_id=uid2
+            )
+            session.add(record)
+            session.commit()
+            return 0
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 def user_cashout(uid, amount, address, tx_hash):
@@ -955,13 +1088,18 @@ def user_cashout(uid, amount, address, tx_hash):
     :return: 无
     """
     session = Session()
-    transaction = UserTransactions(
-        uid=uid,
-        amount=amount,
-        address=address,
-        tx_hash=tx_hash
-    )
-    session.add(transaction)
+    try:
+        transaction = UserTransactions(
+            uid=uid,
+            amount=amount,
+            address=address,
+            tx_hash=tx_hash
+        )
+        session.add(transaction)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()
 
 
 def get_top_notebooks(start, end):
@@ -972,20 +1110,25 @@ def get_top_notebooks(start, end):
     :return:
     """
     session = Session()
-    # Cross Join
-    content_query = session.query(NotebookContent.nid,
-                                  f.max(NotebookContent.time).label("t"), Notebook).\
-        group_by(NotebookContent.nid).\
-        order_by(sql.desc("t")).\
-        filter(Notebook.nid == NotebookContent.nid, Notebook.mode == 2).\
-        offset(start).limit(end - start).all()
-    notebooks_json = [
-        {
-            "id": [nid, notebook.rid],
-            "name": notebook.name,
-            "desc": notebook.desc,
-            "last_reply": last_reply
-        }
-        for nid, last_reply, notebook in content_query
-    ]
-    return notebooks_json
+    try:
+        # Cross Join
+        content_query = session.query(NotebookContent.nid,
+                                      f.max(NotebookContent.time).label("t"), Notebook).\
+            group_by(NotebookContent.nid).\
+            order_by(sql.desc("t")).\
+            filter(Notebook.nid == NotebookContent.nid, Notebook.mode == 2).\
+            offset(start).limit(end - start).all()
+        notebooks_json = [
+            {
+                "id": [nid, notebook.rid],
+                "name": notebook.name,
+                "desc": notebook.desc,
+                "last_reply": str(last_reply)
+            }
+            for nid, last_reply, notebook in content_query
+        ]
+        return dbmsg(data=notebooks_json)
+    except:
+        traceback.print_exc()
+    finally:
+        session.close()

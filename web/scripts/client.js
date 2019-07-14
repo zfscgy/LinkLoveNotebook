@@ -318,6 +318,11 @@ let client =
             .catch(err => { next.catch(err) })
     },
 
+    get_friend_applications(next) {
+        axios.get(server + "/api/myFriendApplications")
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
+    },
     /**
      * 参数：
      * notebook_id
@@ -362,7 +367,14 @@ let client =
             .catch(err => { next.catch(err) })
         return { msg: "ok" }
     },
-
+    /**
+     *  
+     */
+    get_my_notebook_proposals(next) {
+        axios.get(server + "/api/myNotebookProposals")
+            .then(res => { console.log(res); next.then(res.data) })
+            .catch(err => { next.catch(err) })
+    },
     /**
      * 
      */
@@ -424,6 +436,16 @@ let client =
             params: {
                 start: start,
                 end: end
+            }
+        })
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
+    },
+
+    get_account_points(uid, next) {
+        axios.get(server + "/api/userPoints", {
+            params: {
+                uid: uid,
             }
         })
             .then(res => { next.then(res.data) })

@@ -24,8 +24,8 @@
                     </button>
                     <div class="collapse navbar-collapse" id="navbar-list">
                         <ul class="navbar-nav mr-auto">
-                            <li class="nav-item active"><a class="nav-link" href="account.html">个人中心</a></li>
-                            <li class="nav-item"><a class="nav-link" href="#">发现</a></li>
+                            <li class="nav-item"><a class="nav-link" href="account.html">个人中心</a></li>
+                            <li class="nav-item"><a class="nav-link"  href="explore.html">发现</a></li>
                         </ul>
                         <div>
                             <a href="notifications.html">
@@ -35,6 +35,11 @@
                         </div>
                     </div>
                 </nav>
+            </div>
+            <div class="row" style="margin: 10px; justify-content: center; align-items: center">
+                <div style="margin: 10px">我的积分: {{points}}</div>
+                <button class="btn btn-primary" style="margin: 10px">充值</button>
+                <button class="btn btn-primary" style="margin: 10px">提现</button>
             </div>
             <div class="row justify-content-center">
                 <ul class="zf-tab-list">
@@ -65,7 +70,7 @@
                                     待确认:
                                 </div>
                                 <div class="zf-sm-user-pic-list">
-                                    <figure v-for="user in proposal.unauthed">
+                                    <figure v-for="user in proposal.unauthed_writers">
                                         <img v-bind:src="user.avatar">
                                         <figcaption class="text-center">{{user.name}}</figcaption>
                                     </figure>
@@ -74,7 +79,7 @@
                                     已同意:
                                 </div>
                                 <div class="zf-sm-user-pic-list">
-                                    <figure v-for="user in proposal.authed">
+                                    <figure v-for="user in proposal.authed_writers">
                                         <img v-bind:src="user.avatar">
                                         <figcaption class="text-center">{{user.name}}</figcaption>
                                     </figure>
@@ -83,7 +88,7 @@
                                     已放弃:
                                 </div>
                                 <div class="zf-sm-user-pic-list">
-                                    <figure v-for="user in proposal.rejected">
+                                    <figure v-for="user in proposal.rejected_writers">
                                         <img v-bind:src="user.avatar">
                                         <figcaption class="text-center">{{user.name}}</figcaption>
                                     </figure>
