@@ -60,7 +60,7 @@ var notebook = new Vue({
             console.log(this.info)
             let nid = this.info.id[0]
             let that = this
-            this.contents = client.get_notebook_contents(nid, this.content_start, this.content_end,
+            client.get_notebook_contents(nid, 0, this.content_end + 20,
                 {
                     then(res) {
                         if (res.msg != "ok") {
@@ -70,7 +70,9 @@ var notebook = new Vue({
                             alert(dbmsgs[res.data.dbmsg])
                         }
                         else {
-                            that.contents = res.data.data
+                            that.contents = that.contents.concat(
+                                res.data.data.slice(that.content_end, res.data.data.length))
+                            that.content_end = res.data.data.length
                         }
                     },
                     catch(err) {
@@ -90,6 +92,7 @@ var notebook = new Vue({
                         alert(dbmsgs[res.data.dbmsg])
                     }
                     else {
+                        that.input.new_content = ""
                         that.refresh_content()
                     }
                 },
@@ -192,6 +195,43 @@ var notebook = new Vue({
 
             }
             client.vote_content(this.reward.cid, 3, Number(this.reward.amount), next)
+        },
+        load_more() {
+            let start = this.content_end
+            let end = this.content_end + 20
+            let that = this
+            let next = {
+                then(res) {
+                    if (res.msg != "ok") {
+                        alert(smsgs[res.msg])
+                    }
+                    else if (res.data.dbmsg != "ok") {
+                        alert(dbmsgs[res.data.dbmsg])
+                    }
+                    else {
+                        if(res.data.data.length == 0) {
+                            alert("没有更多内容啦！")
+                            return
+                        }
+                        that.contents = that.contents.concat(res.data.data)
+                        console.log(that)
+                        that.content_end += res.data.data.length
+                        if(that.content_end - that.content_start > 100) {
+                            that.content_start += 50
+                        }
+                    }
+                },
+                catch(err) {
+                    console.log(err)
+                    alert(err)
+                }
+            }
+            client.get_notebook_contents(this.info.id[0], start, end, next)
+        },
+        load_less() {
+            if(that.content_end - that.content_Start > 100) {
+                that.content_end += 50
+            }   
         }
     }
 })

@@ -47,12 +47,15 @@
                 </div>
             </div>
             <hr>
-            <div class="zf-content-container" v-for="content, index in contents" v-bind:key="content.cid">
+            <div class="zf-content-container" v-for="content, index in contents.slice(content_start,content_end)" v-bind:id="'floor' + content.floor" v-bind:key="content.cid">
                 <div class="row">
                     <img v-bind:src="content.author.avatar" class="zf-content-mark"></img>
                     <div>
                         <span class="zf-content-author">{{content.author.name}}</span>
                         <span class="text-muted zf-content-date" style="align-self: flex-end">{{content.time}}</span>
+                    </div>
+                    <div style="margin: 10px;font-size:12px">
+                        <span>{{content.floor.toString() + "楼"}}</span>
                     </div>
                 </div>
                 <div class="row">
@@ -85,7 +88,7 @@
             </div>
             <div class="row" style="justify-content: center">
                 <div style="cursor: pointer; font-size:12px; background: lightgray; border: 1px solid lightgray; border-radius: 4px;
-                        padding-left: 20px; padding-right: 20px; padding-top: 5px; padding-bottom: 5px">
+                        padding-left: 20px; padding-right: 20px; padding-top: 5px; padding-bottom: 5px" v-on:click="load_more()">
                     向下加载更多...
                 </div>
             </div>

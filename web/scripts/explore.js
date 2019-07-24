@@ -67,3 +67,13 @@ let explore = new Vue({
     }
 })
 explore.get_recent_notebooks()
+client.get_my_account_info({
+    then(res) {
+        if (res.msg == "ok" && res.data.dbmsg == "ok") {
+            explore.account_info = res.data.data
+        }
+    },
+    catch(err) {
+        console.log(err)
+    }
+})

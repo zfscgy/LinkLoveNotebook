@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Text, \
     create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.sql import and_, or_, functions as f
+from sqlalchemy.sql import and_, or_, functions as f, func
 import sqlalchemy as sql
 from Configs import *
 import traceback
@@ -500,7 +500,7 @@ def get_account_info(account_id):
             # 该笔记本的写权限仍然在接受中
             if open_notebook.mode == 4:
                 continue
-            writers = [{"user_id": [ writer.uid, writer.user.rid ],
+            writers = [{"user_id": [writer.uid, writer.user.rid],
                         "name": writer.user.name,
                         "avatar": writer.user.avatar }
                        for writer in open_notebook.preferred_writers]
