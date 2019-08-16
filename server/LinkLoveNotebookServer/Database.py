@@ -386,6 +386,33 @@ def auth_notebook(uid:int, nid:int, act:int):
         session.close()
 
 
+def public_notebook(uid: int, nid: int, public: int):
+    session = Session()
+    try:
+        if public != 0 and public != 1:
+            return dbmsg("s0")
+        user = session.query(User).filter_by(uid=uid).one_or_none()
+        if not user:
+            return dbmsg("21")
+        notebook = session.query(Notebook).filter_by(nid=nid).one_or_none()
+        if not notebook:
+            return dbmsg("31")
+        user_notebook_mode = session.query(UserNotebookMode).\
+            filter_by(nid=nid, uid=uid).one_or_none()
+        if not user_notebook_mode:
+            return dbmsg("71")
+        if user_notebook_mode.mode == 1 or user_notebook_mode == 3:
+            return dbmsg("75")
+        user_notebook_mode.public = public
+        return dbmsg("ok")
+    except:
+        session.rollback()
+        traceback.print_exc()
+    finally:
+        session.close()
+
+
+
 # 根据 uid 获得简单的账户信息
 def get_simple_account_info(account_id):
     session = Session()
@@ -475,10 +502,18 @@ def get_my_account_info(uid:int):
     finally:
         session.close()
 
+
 '''
     rid 可以是 int 也可以是 str 
 '''
+
+
 def get_account_info(account_id):
+    '''
+
+    :param account_id: 用户的uid或者rid
+    :return:
+    '''
     session = Session()
     try:
         if type(account_id) == str:
@@ -521,6 +556,7 @@ def get_account_info(account_id):
         traceback.print_exc()
     finally:
         session.close()
+
 
 def get_my_unauthed_notebooks(uid:int):
     session = Session()
@@ -597,6 +633,7 @@ def get_my_notebook_requests(uid:int):
         traceback.print_exc()
     finally:
         session.close()
+
 
 # 第三方查看笔记本信息
 def get_notebook_info(rid):
@@ -694,6 +731,7 @@ def get_notebook_contents(nid:int, start:int, end:int, uid=None):
         traceback.print_exc()
     finally:
         session.close()
+
 
 def write_notebook_content(uid:int, nid:int, content:str, imgs:str="", ref:int=0):
     new_content = NotebookContent(uid=uid, nid=nid,
@@ -865,6 +903,7 @@ def get_friend_list(uid:int):
     finally:
         session.close()
 
+
 def get_my_friend_requests(uid:int):
     session = Session()
     try:
@@ -930,6 +969,7 @@ def get_my_friend_applications(uid:int):
         traceback.print_exc()
     finally:
         session.close()
+
 
 # mode = 1: upvote
 # mode = 2: downvote
@@ -1000,6 +1040,7 @@ def vote_content(cid:int, uid:int, vtype:int, amount:int=0):
     finally:
         session.close()
 
+
 def get_user_points(uid):
     session = Session()
     try:
@@ -1011,6 +1052,7 @@ def get_user_points(uid):
         traceback.print_exc()
     finally:
         session.close()
+
 
 def transfer_points(uid1, uid2, reward_id, amount, transfer_type):
     """

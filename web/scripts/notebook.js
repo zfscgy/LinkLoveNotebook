@@ -71,7 +71,7 @@ var notebook = new Vue({
                         }
                         else {
                             that.contents = that.contents.concat(
-                                res.data.data.slice(that.content_end, res.data.data.length))
+                                res.data.data.slice(that.contents.length, res.data.data.length))
                             that.content_end = res.data.data.length
                         }
                     },

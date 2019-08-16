@@ -160,8 +160,10 @@ let client =
      * 返回
      * account_info: {[ uid,id ], name, avatar} 
      */
-    get_simple_account_info(user_id) {
-        return { data: simple_info, msg: "ok" }
+    get_simple_account_info(uid, next) {
+        axios.get(server + "/api/simpleAccount")
+            .then(res => { next.then(res.data) })
+            .catch(err => { next.catch(err) })
     },
 
     /**

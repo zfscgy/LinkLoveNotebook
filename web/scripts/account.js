@@ -96,7 +96,9 @@ var account = new Vue({
             let writers = [this.account_info.id[1]]
             // 如果在private mode, 则写权限数组不为空
             if (this.input.new_notebook_modal.private_mode) {
-                writers = writers.concat(this.input.new_notebook_modal.writers_str.trim().split(' '))
+                if(this.input.new_notebook_modal.writers_str.length > 0) {
+                    writers = writers.concat(this.input.new_notebook_modal.writers_str.trim().split(' '))
+                }
             }
             else { // 如果是公共笔记本，则writers数组为空
                 writers = []

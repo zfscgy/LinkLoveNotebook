@@ -5,13 +5,19 @@ import json
 import Database as d
 import Token as t
 
-def record_exception(e:Exception):
+deploy_mode = False
+if deploy_mode:
+    import sys
+    sys.path.append("")
+
+
+def record_exception(e: Exception):
     print("Exception: " + str(e) + "\n==========")
     traceback.print_exc()
 
 
-def smsg(msg:str="ok", data:dict=None):
-    return {"msg":msg, "data": data}
+def smsg(msg: str = "ok", data: dict = None):
+    return {"msg": msg, "data": data}
 
 import traceback
 
@@ -108,6 +114,26 @@ def get_my_account_info():
     account_info = d.get_my_account_info(uid)
     return json.dumps(smsg(data=account_info))
 
+
+@app.route('/api/simpleAccount/', methods=["GET"])
+def get_simple_account_info():
+    token = request.cookies.get("token")
+    # Cookie中没有Token
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    my_uid = info["uid"]
+    uid = request.args.get("uid", type=int)
+    if not uid or uid == -1:
+        uid = my_uid
+    return json.dumps(smsg(data=d.get_simple_account_info(uid)))
 
 @app.route('/api/myFriends/', methods=["GET"])
 def get_my_friends():
@@ -256,6 +282,7 @@ def friend():
     res = d.make_friend(uid, uid2, act)
     return json.dumps(smsg(data=res))
 
+
 @app.route("/api/myFriendApplications", methods=["GET"])
 def my_friend_applications():
     """
@@ -278,6 +305,7 @@ def my_friend_applications():
     uid = info['uid']
     res = d.get_my_friend_applications(uid)
     return json.dumps(smsg(data=res))
+
 
 @app.route("/api/friendRequests", methods=["GET"])
 def friend_requests():
@@ -343,6 +371,7 @@ def my_notebook_requests():
     res = d.get_my_notebook_requests(uid)
     return json.dumps(smsg(data=res))
 
+
 @app.route('/api/notebookAuth', methods=["GET"])
 def auth_notebook():
     token = request.cookies.get("token")
@@ -360,6 +389,26 @@ def auth_notebook():
     nid = request.args.get("nid", type=int)
     act = request.args.get("act", type=int)
     res = d.auth_notebook(uid, nid, act)
+    return json.dumps(smsg(data=res))
+
+
+@app.route('/api/publicNotebook', methods=["GET"])
+def public_notebook():
+    token = request.cookies.get("token")
+    if token is None:
+        return json.dumps(smsg("04"))
+    info = t.decode_token(token)
+    if "err_msg" in info:
+        # Token过期
+        if info["err_msg"][0:2] == "se":
+            return json.dumps(smsg("02"))
+        # Token无效
+        else:
+            return json.dumps(smsg("03"))
+    uid = info['uid']
+    nid = request.args.get("nid", type=int)
+    public = request.args.get("public", type=int)
+    res = d.public_notebook(uid, nid, public)
     return json.dumps(smsg(data=res))
 
 

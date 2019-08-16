@@ -40,9 +40,11 @@ databaseMsgs = {
     "72": "你已经接受写权限",
     "73": "你已经拒绝写权限",
     "74": "该笔记本是公开笔记本，操作无效",
-    # vote_contetn
+    # public_notebook
+    "75": "无法公开没有写权限的笔记本",
+    # vote_content
     "81": "无法找到该id对应的笔记本内容",
-    # abount points
+    # about points
     "a1": "没有足够的积分进行该操作",
     # string length check failed
     "s0": "查询格式错误",
@@ -58,6 +60,7 @@ serverMsg = {
     "04": "无法获取token，请重新登录，并检查浏览器Cookie设置",
 }
 
+
 class ServerParam:
     default_notebook_len = 20
 
@@ -68,6 +71,8 @@ class PointParam:
     reply_notebook_cost = 50
     upvote_reward = 5
 
+class Deployment:
+    path = ""
 
 SP = ServerParam
 PP = PointParam

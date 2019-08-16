@@ -17,24 +17,8 @@
     <div id="notifications">
         <div class="container">
             <div id="header">
-                <nav class="navbar navbar-expand-md navbar-dark bg-dark">
-                    <a class="navbar-brand" href="#">链恋笔记本</a>
-                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-list">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbar-list">
-                        <ul class="navbar-nav mr-auto">
-                            <li class="nav-item"><a class="nav-link" href="account.html">个人中心</a></li>
-                            <li class="nav-item"><a class="nav-link"  href="explore.html">发现</a></li>
-                        </ul>
-                        <div>
-                            <a href="notifications.html">
-                                <img v-bind:src="account_info.avatar"
-                                    style="height: 2rem; width: 2rem; border-radius: 0.3rem">
-                            </a>
-                        </div>
-                    </div>
-                </nav>
+                <notebook-header>
+                </notebook-header>
             </div>
             <div class="row" style="margin: 10px; justify-content: center; align-items: center">
                 <div style="margin: 10px">我的积分: {{points}}</div>
