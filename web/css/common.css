@@ -10,7 +10,7 @@ input[type=text]::-ms-clear {
 }
 
 .zf-card-container {
-    max-height: 300px;
+    max-height: 500px;
 }
 
 .zf-card {

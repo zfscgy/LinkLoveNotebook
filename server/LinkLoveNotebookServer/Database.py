@@ -24,18 +24,20 @@ class User(base):
     __tablename__ = "user"
     # 用户序号
     uid = Column(Integer, primary_key=True, autoincrement=True)
-    # 用户id，最大长度16，数字，字母，下划线组成。首个字符必须是字母
-    rid = Column(String(16), index=True)
+    # 用户id，最大长度64，数字，字母，下划线组成。首个字符必须是字母
+    rid = Column(String(DP.str_id_len), index=True)
     # 用户注册时间
     reg_time = Column(DateTime)
     # md5(用户序号+用户id+用户私钥)
-    u_key_md5 = Column(String(32))
-    # 用户昵称，长度<32
-    name = Column(String(32))
+    u_key_md5 = Column(String(DP.str_name_len))
+    # 用户昵称，长度<DP.str_name_len
+    name = Column(String(DP.str_name_len))
     # 用户头像地址
-    avatar = Column(String(32))
+    avatar = Column(String(DP.str_name_len))
     # 用户的个性签名
     desc = Column(String(128))
+    # 用户性别 0 表示女，1表示男
+    gender = Column(Integer)
     # 用户状态, 0
     status = Column(Integer)
 
@@ -71,9 +73,9 @@ class Notebook(base):
     # 笔记本编号
     nid = Column(Integer, primary_key=True, autoincrement=True)
     # 笔记本id（最大长度16）
-    rid = Column(String(16), index=True)
+    rid = Column(String(DP.str_id_len), index=True)
     # 笔记本名称（最大长度32）
-    name = Column(String(32))
+    name = Column(String(DP.str_name_len))
     # 笔记本创建者
     creator = Column(Integer, ForeignKey(User.uid))
     # 笔记本创建时间
@@ -214,12 +216,13 @@ def login(rid: str, key_md5: str):
         session.close()
 
 
-def user_register(rid: str, key_md5:str, name:str, avatar:str, desc:str):
+def user_register(rid: str, key_md5: str, name: str, avatar: str, desc: str, gender: int):
     # check limits
-    if len(rid) > 16 or \
-       len(key_md5) > 32 or \
-       len(name) > 32 or \
-       len(avatar) > 32 or \
+    if len(rid) > DP.str_id_len or \
+       len(key_md5) > DP.str_name_len or \
+       len(name) > DP.str_name_len or \
+       len(avatar) > DP.img_path_len or \
+       (gender != 0 and gender != 1) or \
        len(desc) > 128:
         return dbmsg("s1")
 
@@ -234,6 +237,7 @@ def user_register(rid: str, key_md5:str, name:str, avatar:str, desc:str):
             reg_time=datetime.datetime.today(),
             name=name,
             avatar=avatar,
+            gender=gender,
             status=0
         )
         session.add(user)
@@ -259,8 +263,8 @@ def user_register(rid: str, key_md5:str, name:str, avatar:str, desc:str):
 def create_notebook(rid:str, name:str, creator_id:int, desc:str, writer_list:list,
                     public:int):
     # 检查 rid、名称、描述的长度
-    if len(rid) > 16 or \
-       len(name) > 32 or \
+    if len(rid) > DP.str_id_len or \
+       len(name) > DP.str_name_len or \
        len(desc) >128:
         return dbmsg("s1")
 

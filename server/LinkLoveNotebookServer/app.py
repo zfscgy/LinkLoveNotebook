@@ -41,7 +41,7 @@ def login():
         rid, key_md5 = request.json.get("id"), request.json.get("key_md5")
         res = d.login(rid, key_md5)
         if res["dbmsg"] != "ok":
-            return make_response(  json.dumps(smsg(data=res)))
+            return make_response(json.dumps(smsg(data=res)))
         else:
             res["data"] = t.generate_token(res["data"])
         resp = make_response(json.dumps(smsg(data=res)))
@@ -60,7 +60,8 @@ def register():
         name = request.json.get("name")
         avatar = request.json.get("avatar")
         desc = request.json.get("desc")
-        res = d.user_register(rid, key_md5, name, avatar, desc)
+        gender = request.json.get("gender")
+        res = d.user_register(rid, key_md5, name, avatar, desc, gender)
         if res['dbmsg'] != "ok":
             return json.dumps(smsg(data=res))
 

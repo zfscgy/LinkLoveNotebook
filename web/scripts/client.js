@@ -73,10 +73,10 @@ let check_syntax = function (type, input) {
     switch (type) {
         case "account_id":
         case "notebook_id":
-            return /^[a-zA-Z][0-9a-zA-Z_]*$/.test(input) && input.length <= 16
+            return /^[a-zA-Z][0-9a-zA-Z_]*$/.test(input) && input.length <= 64 && input.length > 0
         case "account_name":
         case "notebook_name":
-            return input.length <= 32
+            return input.length <= 64 && input.length > 0
         default:
             console.log("Error, not correct input type")
             return false
@@ -115,14 +115,15 @@ let client =
      * avatar: 用户头像地址
      * 
      */
-    register_account(id, priv_key, name, avatar, desc, next) {
+    register_account(id, priv_key, name, avatar, desc, gender, next) {
         let key_md5 = md5(id + priv_key)
         let post_data = {
             "id": id,
             "key_md5": key_md5,
             "name": name,
             "avatar": avatar,
-            "desc": desc
+            "desc": desc,
+            "gender": gender
         }
         axios.post(server + "/api/register/", post_data,
             {

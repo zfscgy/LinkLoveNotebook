@@ -71,8 +71,19 @@ class PointParam:
     reply_notebook_cost = 50
     upvote_reward = 5
 
+
+class DatabaseParams:
+    # 各种id的最大长度
+    str_id_len = 64
+    # 各种名称的最大长度
+    str_name_len = 64
+    # 图片路径的最大长度（可以用md5寻址法）
+    img_path_len = 32
+
+
 class Deployment:
     path = ""
 
 SP = ServerParam
 PP = PointParam
+DP = DatabaseParams
