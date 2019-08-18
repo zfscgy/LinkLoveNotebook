@@ -19,76 +19,67 @@
     </style>
 </head>
 
-<body>
-    <div id="login" class="container" style="margin-top:30px;margin-bottom:15px;max-width: 600px;">
-        <div class="row justify-content-around">
-            <h1 class="text-center">
-                链恋笔记本
-            </h1>
+<body style="background-image: url(https://bing.biturl.top/?resolution=1920&format=image&index=0&mkt=zh-CN)">
+    <div id="login">
+        <div style="text-align: center; font-size: 50px; margin: 80px; color: whitesmoke; background-color: rgba(255, 155, 155, 0.7)">
+            链恋笔记本
         </div>
-        <div class="row" style="margin-top: 40px"></div>
-        <div class="row justify-content-around">
-            <div id="login-tab" class="col-5 zf-tab-title text-muted text-center" v-on:click="switch_tab($event)">
-                <div v-bind:class="{'zf-selected': selected=='login-tab'}"
-                    style="padding-left:30px; padding-right: 30px">登录</div>
-            </div>
-            <div id="register-tab" class="col-5 zf-tab-title text-muted text-center" v-on:click="switch_tab($event)">
-                <div v-bind:class="{'zf-selected': selected=='register-tab'}"
-                    style="padding-left:30px; padding-right: 30px">注册</div>
-            </div>
-        </div>
-        <div v-show="selected=='login-tab'" class="container w-75 zf-tab-body">
-            <!--此处的div必须使用 align-items:center, 因为没有多行的情况下align-content无效，会变成stretch, 导致文字无法居中-->
-            <div class="row zf-horizental-input-row">
-                <div class="zf-horizental-input-label">
-                    <div>用户名</div>
+        <div id="login-modal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content" style="background-color: rgba(255, 255, 255, 0.7)">
+                    <div class="modal-header">
+                        <ul class="nav nav-tabs">
+                            <li class="nav-item"><a class="nav-link" v-bind:class="{'active':tab=='signin'}"
+                                    v-on:click="switch_tab('signin')" href="#">登录</a>
+                            </li>
+                            <li class="nav-item"><a class="nav-link" v-bind:class="{'active':tab=='signup'}"
+                                    v-on:click="switch_tab('signup')" href="#">注册</a>
+                            </li>
+                        </ul>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <div class="col-form-label">用户名</div>
+                            <div class="zf-error-lable" v-show="tab=='signup' && !v_check_syntax('account_id', id)">
+                                不多于64字符的数字、字母、下划线组合，且开头为字母
+                            </div>
+                            <input type="text" class="form-control" maxlength="64" v-model="id">
+                        </div>
+                        <div class="form-group">
+                            <div class="col-form-label">密码</div>
+                            <input type="password" class="form-control" v-model="passwd">
+                        </div>
+                        <div class="form-group" v-if="tab=='signup'">
+                            <div class="zf-error-lable" v-show="!check_password()">
+                                两次输入的密码应该一样</div>
+                            <div class="col-form-label">确认密码</div>
+                            <input type="password" class="form-control" v-model="passwd_1">
+                        </div>
+                        <div class="form-group" v-if="tab=='signup'">
+                            <div class="col-form-label">昵称</div>
+                            <input type="text" class="form-control" v-model="name" maxlength="64">
+                        </div>
+                        <div v-if="tab=='signup'">
+                            <div class="col-form-label">性别</div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" v-model="gender" value="1"
+                                    checked>
+                                <label class="form-check-label">男</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" v-model="gender" value="0">
+                                <label class="form-check-label">女</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" v-on:click="confirm">确认</button>
+                    </div>
                 </div>
-                <input class="col-8 form-control" v-model="input.id">
-            </div>
-            <div class="row zf-horizental-input-row">
-                <div class="zf-horizental-input-label">
-                    <div>密码</div>
-                </div>
-                <input type="password" class="col-8 form-control" v-model="input.priv_key">
-            </div>
-            <div class="row zf-horizental-input-row">
-                <button class="btn btn-primary" style="padding-left: 20px; padding-right: 20px" v-on:click="login()">
-                    登录
-                </button>
-            </div>
-        </div>
-        <div v-show="selected=='register-tab'" class="container w-75 zf-tab-body">
-            <div class="row zf-horizental-input-row">
-                <div class="zf-horizental-input-label">
-                    <div>用户名</div>
-                </div>
-                <input class="col-8 form-control" v-model="input.id">
-            </div>
-            <div class="row zf-horizental-input-row">
-                <div class="zf-horizental-input-label">
-                    <div>密码</div>
-                </div>
-                <input type="password" class="col-8 form-control" v-model="input.priv_key">
-            </div>
-            <div class="zf-error-lable" v-show="!check_password()">
-                两次输入的密码应该一样</div> 
-            <div class="row zf-horizental-input-row">
-                <div class="zf-horizental-input-label">
-                    <div>再次输入密码</div>
-                </div>
-                <input type="password" class="col-8 form-control" v-bind:class="{'zf-has-error':!check_password()}"
-                    v-model="input.priv_key_2">
-            </div>
-            <div class="row zf-horizental-input-row">
-                <div class="zf-horizental-input-label">
-                    <div>昵称</div>
-                </div>
-                <input class="col-8 form-control" v-model="input.name">
-            </div>
-            <div class="row zf-horizental-input-row">
-                <button class="btn btn-primary" style="padding-left: 20px; padding-right: 20px" v-on:click="register()">
-                    注册
-                </button>
             </div>
         </div>
     </div>

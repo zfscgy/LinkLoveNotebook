@@ -1,54 +1,80 @@
-let next = {
-    then(res) {
-        console.log(res)
-        if (res.msg == 'ok') {
-            if (res.data.dbmsg == "ok") {
-                window.location = "account.html"
-            }
-            else {
-                let err_msg = dbmsgs[res["data"]["dbmsg"]]
-                alert(err_msg)
-            }
-        }
-        else {
-            alert(smsgs[res.msg])
-        }
-    },
-    catch(err) {
-        alert(err)
-        console.log(err)
-    }
-}
 let login = new Vue({
     el: "#login",
     data: {
-        // "login-tab" for login, 
-        // "register-tab" for register
-        selected: "login-tab",
-        input: {
+            logined: false,
+            tab: 'signin',
+            ch:{
+                'signin': '登录',
+                'signup': '注册'
+            },
+            account_info: {
+                avatar: ""
+            },
             id: "",
-            priv_key: "",
-            priv_key_2: "",
-            name: ""
-        }
+            name: "",
+            passwd: "",
+            passwd_1: "",
+            gender: 0
     },
     methods: {
-        switch_tab(event) {
-            console.log("Switch tab to " + event.currentTarget.id)
-            this.selected = event.currentTarget.id
+        get_simple_account_info() {
+            let that = this
+            let next = {
+                then(res) {
+                    if (res.msg == "ok" && res.data.dbmsg == "ok") {
+                        that.logined = true
+                        that.account_info = res.data.data
+                    }
+                    else {
+
+                    }
+                    console.log(that.account_info)
+                },
+                catch(err) {
+                    console.log(err)
+                }
+            }
+            client.get_simple_account_info(-1, next)
+        },
+        v_check_syntax(type, input) {
+            return check_syntax(type, input)
+        },
+        switch_tab(tab) {
+            this.tab = tab
         },
         check_password() {
-            return this.input.priv_key == this.input.priv_key_2
+            return this.passwd == this.passwd_1
         },
-        register() {
-            if(!this.check_password()) {
-                alert("密码前后输入不一致，请重新输入")
-                return
+        confirm() {
+            let that = this
+            let next = {
+                then(res) {
+                    if (res.msg == "ok") {
+                        if (res.data.dbmsg == "ok") {
+                            that.logined = true
+                            that.get_simple_account_info()
+                        }
+                        else {
+                            alert(dbmsgs[res.data.dbmsg])
+                        }
+                    }
+                    else {
+                        alert(smsgs[res.msg])
+                    }
+                },
+                catch(err) {
+                    alert(err)
+                    console.log(err)
+                }
             }
-            let res = client.register_account(this.input.id, this.input.priv_key, this.input.name, "/web/res/imgs/img1.jpg", "", next)
-        },
-        login() {
-            let res = client.login(this.input.id, this.input.priv_key, next)
+            if (this.tab == "signin") {
+                client.login(this.id, this.passwd, next)
+            }
+            else {
+                let avatars = ["/web/res/imgs/img2.jpg", "/web/res/imgs/img1.jpg"]
+                client.register_account(this.id, this.passwd, this.name, avatars[this.gender], "", this.gender, next)
+            }
+            window.location = "/web/account.html"
         }
     }
 })
