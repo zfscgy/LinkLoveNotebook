@@ -82,7 +82,8 @@ class DatabaseParams:
 
 
 class Deployment:
-    path = ""
+    path = "/home/ubuntu/LinkLoveNotebook/server/LinkLoveNotebookServer"
+
 
 SP = ServerParam
 PP = PointParam

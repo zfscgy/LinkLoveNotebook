@@ -150,7 +150,7 @@ let client =
      * }
      */
     get_my_account_info(next) {
-        axios.get(server + "/api/myAccount")
+        axios.get(server + "/api/myAccount/")
             .then(res => { next.then(res.data) })
             .catch(err => { next.catch(err) })
     },
@@ -162,7 +162,7 @@ let client =
      * account_info: {[ uid,id ], name, avatar} 
      */
     get_simple_account_info(uid, next) {
-        axios.get(server + "/api/simpleAccount")
+        axios.get(server + "/api/simpleAccount/")
             .then(res => { next.then(res.data) })
             .catch(err => { next.catch(err) })
     },

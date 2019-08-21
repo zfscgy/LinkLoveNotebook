@@ -2,14 +2,14 @@ Vue.component('notebook-header', {
     template:
         `<div>
         <nav class="navbar navbar-expand-md navbar-dark bg-dark">
-            <a class="navbar-brand" href="#">链恋笔记本</a>
+            <a class="navbar-brand" href="#"><h3>链恋笔记本</h3></a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-list">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbar-list">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item active"><a class="nav-link" href="account.html">个人中心</a></li>
-                    <li class="nav-item"><a class="nav-link" href="explore.html">发现</a></li>
+                    <li class="nav-item" v-bind:class="{'active':curTab=='account'}"><a class="nav-link" href="account.html">个人中心</a></li>
+                    <li class="nav-item" v-bind:class="{'active':curTab=='explore'}"><a class="nav-link" href="explore.html">发现</a></li>
                 </ul>
                 <div>
                     <a v-if="logined" href="notifications.html">
@@ -80,7 +80,7 @@ Vue.component('notebook-header', {
             </div>
         </div>
         </div>`,
-    props: ['myMessage'],
+    props: ['curTab'],
     data: function() {
         return {
             logined: false,
@@ -136,6 +136,8 @@ Vue.component('notebook-header', {
                         if(res.data.dbmsg == "ok") {
                             that.logined = true
                             that.get_simple_account_info()
+                            alert(that.ch[that.tab] + '成功！')
+                            $('#login-modal').modal('hide')
                         }
                         else {
                             alert(dbmsgs[res.data.dbmsg])

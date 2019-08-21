@@ -8,6 +8,7 @@
     <script src="node_modules/bootstrap/dist/js/bootstrap.js"></script>
     <script src="node_modules/vue/dist/vue.js"></script>
     <script src="node_modules/axios/dist/axios.js"></script>
+    <script src="vue-components/header.js"></script>
     <script src="scripts/client.js"></script>
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
     <link rel="stylesheet" href="css/common.css">
@@ -16,28 +17,11 @@
 <body>
     <div id="notebook">
         <div class="container">
-            <nav class="navbar navbar-expand-md navbar-dark bg-dark">
-                <a class="navbar-brand" href="#">链恋笔记本</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-list">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbar-list">
-                    <ul class="navbar-nav mr-auto">
-                        <li class="nav-item"><a class="nav-link" href="account.html">个人中心</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#">发现</a></li>
-                    </ul>
-                    <div>
-                        <a href="notifications.html">
-                            <img v-bind:src="'res/imgs/img1.jpg'"
-                                style="height: 2rem; width: 2rem; border-radius: 0.3rem">
-                        </a>
-                    </div>
-                </div>
-            </nav>
+            <notebook-header></notebook-header>
             <div class="row">
                 <div class="zf-notebook-header">
                     <h3 class="text-muted">{{info.name}}</h3>
-                    <div style="font-size: 14px">{{info.desc}}</div>
+                    <div>{{info.desc}}</div>
                     <div class="zf-notebook-author-list">
                         <figure class="zf-notebook-author-pic" v-for="author in info.writers">
                             <img v-bind:src="author.avatar">
@@ -54,7 +38,7 @@
                         <span class="zf-content-author">{{content.author.name}}</span>
                         <span class="text-muted zf-content-date" style="align-self: flex-end">{{content.time}}</span>
                     </div>
-                    <div style="margin: 10px;font-size:12px">
+                    <div class="zf-content-floor-num" style="margin: 0.5rem">
                         <span>{{content.floor.toString() + "楼"}}</span>
                     </div>
                 </div>
@@ -87,7 +71,7 @@
                 </div>
             </div>
             <div class="row" style="justify-content: center">
-                <div style="cursor: pointer; font-size:12px; background: lightgray; border: 1px solid lightgray; border-radius: 4px;
+                <div style="cursor: pointer; font-size:0.9rem; background: lightgray; border: 1px solid lightgray; border-radius: 4px;
                         padding-left: 20px; padding-right: 20px; padding-top: 5px; padding-bottom: 5px" v-on:click="load_more()">
                     向下加载更多...
                 </div>

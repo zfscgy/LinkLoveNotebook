@@ -53,6 +53,8 @@ let login = new Vue({
                         if (res.data.dbmsg == "ok") {
                             that.logined = true
                             that.get_simple_account_info()
+                            alert(that.ch[that.tab] + "成功！")
+                            window.location.href = "/web/account.html"
                         }
                         else {
                             alert(dbmsgs[res.data.dbmsg])
@@ -74,7 +76,6 @@ let login = new Vue({
                 let avatars = ["/web/res/imgs/img2.jpg", "/web/res/imgs/img1.jpg"]
                 client.register_account(this.id, this.passwd, this.name, avatars[this.gender], "", this.gender, next)
             }
-            window.location = "/web/account.html"
         }
     }
 })

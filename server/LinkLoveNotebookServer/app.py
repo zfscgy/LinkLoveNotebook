@@ -1,14 +1,18 @@
+
 from flask import Flask, send_from_directory, make_response
 from flask import request
-from Configs import *
 import json
-import Database as d
-import Token as t
+
 
 deploy_mode = False
 if deploy_mode:
     import sys
-    sys.path.append("")
+    sys.path.append("/home/ubuntu/LinkLoveNotebook/server/LinkLoveNotebookServer/")
+
+
+from Configs import *
+import Database as d
+import Token as t
 
 
 def record_exception(e: Exception):
@@ -29,6 +33,7 @@ import traceback
     （一般是数据库信息dbmsg）
 """
 app = Flask(__name__, static_folder=html_path, static_url_path='/web')
+
 
 @app.route('/hello/')
 def hello_world():
@@ -61,6 +66,7 @@ def register():
         avatar = request.json.get("avatar")
         desc = request.json.get("desc")
         gender = request.json.get("gender")
+        gender = int(gender)
         res = d.user_register(rid, key_md5, name, avatar, desc, gender)
         if res['dbmsg'] != "ok":
             return json.dumps(smsg(data=res))
@@ -135,6 +141,7 @@ def get_simple_account_info():
     if not uid or uid == -1:
         uid = my_uid
     return json.dumps(smsg(data=d.get_simple_account_info(uid)))
+
 
 @app.route('/api/myFriends/', methods=["GET"])
 def get_my_friends():

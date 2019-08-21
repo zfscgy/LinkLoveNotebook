@@ -20,7 +20,7 @@
     <div id="explore">
         <div class="container">
             <div id="header">
-                <notebook-header>
+                <notebook-header cur-tab="explore">
                 </notebook-header>
             </div>
             <div class="row">
@@ -31,13 +31,13 @@
             <div class="zf-card-container">
                 <div class="zf-card" v-for="notebook in newest_notebooks">
                     <div class="row" style="align-items: flex-end">
-                        <div class="text-dark zf-text-block" style="font-size: 19px">
+                        <div class="text-dark zf-text-block">
                             <a v-bind:href="'notebook.html?' + 'id=' + notebook.id[1]">{{notebook.name}}</a>
                         </div>
-                        <div class="text-center text-info zf-text-block" style="font-size: 15px">
+                        <div class="text-center text-info zf-text-block zf-notebook-desc">
                             {{notebook.desc}}
                         </div>
-                        <div style="margin-left: auto">
+                        <div class="zf-text-block" style="margin-left: auto">
                             最后回复:&nbsp;{{notebook.last_reply}}
                         </div>
                     </div>

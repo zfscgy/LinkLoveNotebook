@@ -1,12 +1,35 @@
+@media screen and (min-width: 1281px) {
+    html {
+        font-size: 16px
+    }
+}
+@media screen and (max-width: 1280px) {
+    html {
+        font-size: 36px
+    }
+}
+
 input[type=text]::-ms-clear {
     display: none;
+}
+
+body {
+    font-size: 1rem
+}
+
+.container {
+    max-width: 80rem
 }
 
 .zf-account-header {
     display: block;
     flex: 1 1 100%;
     margin: 25px;
-    font-size: 28px
+    font-size: 1rem
+}
+
+.zf-account-notebook-tab {
+    font-size: 1rem
 }
 
 .zf-card-container {
@@ -21,6 +44,10 @@ input[type=text]::-ms-clear {
     margin: 10px;
     border: 1px solid grey;
     border-radius: 10px
+}
+
+.zf-notebook-desc {
+    font-size: 0.9rem
 }
 
 .zf-sm-user-container {
@@ -39,6 +66,8 @@ input[type=text]::-ms-clear {
     cursor: pointer
 }
 
+
+
 .zf-text-block {
     padding-left: 10px;
     padding-right: 10px
@@ -56,14 +85,14 @@ input[type=text]::-ms-clear {
 }
 
 .zf-notebook-friend-list .zf-notebook-friend-pic img {
-    height: 60px;
-    width: 60px;
+    height: 3.5rem;
+    width: 3.5rem;
     border: 1px solid gray;
     border-radius: 20px
 }
 
 .zf-notebook-friend-list .zf-notebook-friend-pic figcaption {
-    font-size: 13px;
+    font-size: 1rem;
     text-align: center
 }
 
@@ -73,70 +102,74 @@ input[type=text]::-ms-clear {
     display: flex;
     flex-direction: column;
     flex: 1 1 100%;
-    font-size: 28px
+    font-size: 1rem
 }
 
 .zf-notebook-header .zf-notebook-author-list {
     display: flex;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 0.6rem;
+    margin-bottom: 0.6rem;
 }
 
 .zf-notebook-header .zf-notebook-author-list .zf-notebook-author-pic {
     display: flex;
     flex-flow: column;
-    margin: 10px;
+    margin: 0.6rem;
 }
 
 .zf-notebook-header .zf-notebook-author-pic img {
-    height: 60px;
-    width: 60px;
+    height: 4rem;
+    width: 4rem;
     border: 1px solid gray;
     border-radius: 20px
 }
 
 .zf-notebook-header .zf-notebook-author-pic figcaption {
-    font-size: 13px;
+    font-size: 1rem;
     text-align: center
 }
 
 .zf-content-container {
     display: block;
-    margin-left: 30px;
-    margin-right: 30px;
+    margin-left: 2rem;
+    margin-right: 2rem;
 }
 
 .zf-content-container .zf-content-mark {
-    height: 50px;
-    width: 50px;
-    margin: 10px;
+    height: 3rem;
+    width: 3rem;
+    margin: 0.5rem;
     border: 1px solid gray;
     border-radius: 20px
 }
 
 
 .zf-content-container .zf-content-author {
-    margin-top: 10px;
-    margin-bottom: 5px;
-    font-size: 15px;
+    margin-top: 0.6rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
     display: flex
 }
 
 .zf-content-container .zf-content-date {
-    font-size: 12px;
+    font-size: 0.9rem;
     display: flex
 }
 
 
+.zf-content-container .zf-content-floor-num {
+    font-size: 0.8rem
+}
+
 .zf-content-container .zf-content-body {
-    margin-left: 30px;
-    margin-right: 30px;
+    margin-left: 1.6rem;
+    margin-right: 1.6rem;
     border-left: 2px solid gray;
 }
 
 .zf-content-container .zf-content-body .zf-content-body-text {
-    margin-left: 15px;
-    margin-right: 15px;
+    margin-left: 1rem;
+    margin-right: 1rem;
     padding: 10px;
     border: 1px solid lightgray;
     border-radius: 10px;
@@ -144,16 +177,16 @@ input[type=text]::-ms-clear {
 }
 
 .zf-content-container .zf-content-extra {
-    margin-left: 30px;
-    margin-right: 30px;
+    margin-left: 1.6rem;
+    margin-right: 1.6rem;
     padding-left: 15px;
     border-left: 2px solid gray;
     display: flex
 }
 
 .zf-content-container .zf-content-extra-label {
-    font-size: 12px;
-    margin: 5px
+    font-size: 0.8rem;
+    margin: 0.8rem
 }
 
 .zf-reply-box {
@@ -163,9 +196,9 @@ input[type=text]::-ms-clear {
 .zf-reply-box .zf-reply-box-label {
     margin-left: 30px;
     margin-right: 30px;
-    font-size: 18px;
+    font-size: 1.1rem;
     color: #404040;
-    max-width: 500px;
+    max-width: 35rem;
     display: flex;
     justify-content: space-between;
     align-items: center
@@ -175,7 +208,7 @@ input[type=text]::-ms-clear {
     margin-left: 30px;
     margin-right: 30px;
     margin-top: 15px;
-    max-width: 500px;
+    max-width: 35rem;
     height: 120px
 }
 
@@ -226,7 +259,7 @@ input[type=text]::-ms-clear {
 }
 
 .zf-sm-user-pic-list figcaption {
-    font-size: 13px;
+    font-size: 0.8rem;
     color: darkblue
 }
 
@@ -235,7 +268,7 @@ input[type=text]::-ms-clear {
 }
 
 .zf-error-lable {
-    font-size: 12px;
+    font-size: 1.7rem;
     color: red;
     margin-bottom: 4px
 }
@@ -246,7 +279,7 @@ input[type=text]::-ms-clear {
     flex-wrap: wrap
 }
 .zf-reward-box div {
-    font-size: 20px;
+    font-size: 3rem;
     margin: 10px;
     padding: 5px;
     border: 2px solid green;
